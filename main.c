@@ -18,7 +18,7 @@ int main() {
 
     uint32_t eax, ebx, ecx, edx;
     int code = CPUID_GETVENDORSTRING;
-    printf("Call Cpuid With code: 0x%x\n", code);
+    printf("Call Cpuid With code: 0x%x Page 1\n", code);
     call_cpuid(code, 0, &eax, &ebx, &ecx, &edx);
     printf("EAX: %08x\n", eax);
     printf("EBX: %08x\n", ebx);
@@ -118,6 +118,44 @@ int main() {
     printf("ECX: %x\n", ecx);
     printf("EDX: %x\n", edx);
 
+    code = 0x10;
+    printf("Call Cpuid With code: 0x%x page 1\n", code);
+    call_cpuid(code, 0, &eax, &ebx, &ecx, &edx);
+    printf("EAX: %x\n", eax);
+    printf("EBX: %x\n", ebx);
+    printf("ECX: %x\n", ecx);
+    printf("EDX: %x\n", edx);
+    printf("Call Cpuid With code: 0x%x page 2\n", code);
+    call_cpuid(code, 1, &eax, &ebx, &ecx, &edx);
+    printf("EAX: %x\n", eax);
+    printf("EBX: %x\n", ebx);
+    printf("ECX: %x\n", ecx);
+    printf("EDX: %x\n", edx);
+    printf("Call Cpuid With code: 0x%x page 3\n", code);
+    call_cpuid(code, 2, &eax, &ebx, &ecx, &edx);
+    printf("EAX: %x\n", eax);
+    printf("EBX: %x\n", ebx);
+    printf("ECX: %x\n", ecx);
+    printf("EDX: %x\n", edx);
+    printf("Call Cpuid With code: 0x%x page 4\n", code);
+    call_cpuid(code, 3, &eax, &ebx, &ecx, &edx);
+    printf("EAX: %x\n", eax);
+    printf("EBX: %x\n", ebx);
+    printf("ECX: %x\n", ecx);
+    printf("EDX: %x\n", edx);
+    printf("Call Cpuid With code: 0x%x page 5\n", code);
+    call_cpuid(code, 4, &eax, &ebx, &ecx, &edx);
+    printf("EAX: %x\n", eax);
+    printf("EBX: %x\n", ebx);
+    printf("ECX: %x\n", ecx);
+    printf("EDX: %x\n", edx);
+    printf("Call Cpuid With code: 0x%x page 6\n", code);
+    call_cpuid(code, 5, &eax, &ebx, &ecx, &edx);
+    printf("EAX: %x\n", eax);
+    printf("EBX: %x\n", ebx);
+    printf("ECX: %x\n", ecx);
+    printf("EDX: %x\n", edx);
+
     code = CPUID_XSAVE_FEATURES_AND_STATE_COMPONENTS;
     printf("Call Cpuid With code: 0x%x page 1\n", code);
     call_cpuid(code, CPUID_XSAVE_features_and_state_components_page_1, &eax, &ebx, &ecx, &edx);
@@ -159,8 +197,14 @@ int main() {
     printf("EDX: %x\n", edx);
 
     code = CPUID_PROCESSOR_TRACE;
-    printf("Call Cpuid With code: 0x%x\n", code);
+    printf("Call Cpuid With code: 0x%x page 1\n", code);
     call_cpuid(code, CPUID_Processor_Trace_page_1, &eax, &ebx, &ecx, &edx);
+    printf("EAX: %x\n", eax);
+    printf("EBX: %x\n", ebx);
+    printf("ECX: %x\n", ecx);
+    printf("EDX: %x\n", edx);
+    printf("Call Cpuid With code: 0x%x page 2\n", code);
+    call_cpuid(code, CPUID_Processor_Trace_page_2, &eax, &ebx, &ecx, &edx);
     printf("EAX: %x\n", eax);
     printf("EBX: %x\n", ebx);
     printf("ECX: %x\n", ecx);
@@ -174,8 +218,20 @@ int main() {
     printf("ECX: %08x (core crystal clock = %u Hz)\n", ecx, ecx);
     unsigned long long int TSCFreq = ecx * (ebx / eax);
     printf("TSCFreq = %x (TSCFreq = %u Hz = %f GHz)\n", TSCFreq, TSCFreq, (float)((float)TSCFreq/1e9));
-    printf("EDX: %08x\n", edx);
+    printf("EDX: %08x\n", edx); // edx siempre es 0
 
+    /*
+     *
+     * NOTAS:
+     * Los datos se devuelven desde esta interfaz de acuerdo con la especificación del procesador y no
+     * reflejan valores reales. El uso adecuado de estos datos incluye la visualización de información del procesador en forma similar
+     * manera a la cadena de marca del procesador y para determinar el rango apropiado a usar al mostrar información del procesador, 
+     * p. Gráficos de historial de frecuencia. La información devuelta no debe no se podrá utilizar para ningún otro propósito, ya que 
+     * la información devuelta no se correlaciona con precisión con la información/contadores devueltos por otras interfaces del procesador.
+     * Si bien un procesador puede admitir la hoja de información de frecuencia del procesador, los campos que devuelven una
+     * El valor de cero no es compatible.
+     *
+     */
     code = CPUID_PROCESSOR_AND_BUS_SPECIFICATION_FREQUENCIES_INFORMATION;
     printf("Call Cpuid With code: 0x%x\n", code);
     call_cpuid(code, 0, &eax, &ebx, &ecx, &edx);
@@ -184,13 +240,14 @@ int main() {
     printf("ECX: %08x (Bus (Reference) Frequency = %u MHz)\n", ecx, ecx & 0xffff);
     printf("EDX: %08x\n", edx);
 
-    /*uint64_t start_tsc, end_tsc;
+    //  metodo no fiable de medir el clock de la cpu!
+    uint64_t start_tsc, end_tsc;
 
     // Medir TSC al inicio
     start_tsc = rdtsc();
 
     // Esperar aproximadamente 1 segundo
-    usleep(1000000); // Esperar 1 segundo (aproximadamente)
+    Sleep(1000); // Esperar 1 segundo (aproximadamente)
 
     // Medir TSC al final
     end_tsc = rdtsc();
@@ -201,7 +258,51 @@ int main() {
     // Calcular la frecuencia en GHz
     double cpu_freq_ghz = (double)tsc_diff / 1e9; // 1 segundo = 1e9 ciclos
 
-    printf("CPU Frequency: %.2f GHz\n", cpu_freq_ghz);*/
+    printf("CPU Frequency: %.2f GHz\n", cpu_freq_ghz);
+
+    
+    code = CPUID_SOC_VENDOR_ATTRIBUTE_ENUMRATION;
+    printf("Call Cpuid With code: 0x%x\n", code);
+    call_cpuid(code, 0, &eax, &ebx, &ecx, &edx);
+    printf("EAX: %x\n", eax);
+    printf("EBX: %x\n", ebx);
+    printf("ECX: %x\n", ecx);
+    printf("EDX: %x\n", edx);
+
+    code = CPUID_INTEL_KEY_LOCKER_FEATURES;
+    printf("Call Cpuid With code: 0x%x\n", code);
+    call_cpuid(code, 0, &eax, &ebx, &ecx, &edx);
+    printf("EAX: %x\n", eax);
+    printf("EBX: %x\n", ebx);
+    printf("ECX: %x\n", ecx);
+    printf("EDX: %x\n", edx);
+
+    code = CPUID_RESERVED_FOR_TDX_ENUMERATION;
+    printf("Call Cpuid With code: 0x%x page 1\n", code);
+    call_cpuid(code, CPUID_AVX10_Features_page_1, &eax, &ebx, &ecx, &edx);
+    printf("EAX: %x\n", eax);
+    printf("EBX: %x\n", ebx);
+    printf("ECX: %x\n", ecx);
+    printf("EDX: %x\n", edx);
+    printf("Call Cpuid With code: 0x%x page 2\n", code);
+    call_cpuid(code, CPUID_AVX10_Features_page_2, &eax, &ebx, &ecx, &edx);
+    printf("EAX: %x\n", eax);
+    printf("EBX: %x\n", ebx);
+    printf("ECX: %x\n", ecx);
+    printf("EDX: %x\n", edx);
+
+    code = CPUID_RESERVED_FOR_HYPERVISOR_USE;
+    printf("Call Cpuid With code: 0x%x\n", code);
+    call_cpuid(code, 0, &eax, &ebx, &ecx, &edx);
+    MyManufacturer_ID = (manufacturer_ID){
+        .EBX = ebx, .ECX = edx,
+        .EDX = ecx, .final_string = '\0'
+    };
+    printf("EAX: %x\n", eax);
+    printf("EBX: %x\n", ebx);
+    printf("ECX: %x\n", ecx);
+    printf("EDX: %x\n", edx);
+    printf("manufacturer_ID: %s\n", (char*)(&MyManufacturer_ID));
 
     return 0;
 }

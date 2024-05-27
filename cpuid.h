@@ -3,10 +3,18 @@
 
 // https://www.cpu-world.com/cgi-bin/CPUID.pl?s=21
 // https://en.wikipedia.org/wiki/CPUID
+// Intel® Architecture Instruction Set Extensions and Future Features Programming Reference
 
 #include <stdio.h>
 #include <stdint.h>
 
+/*
+ *
+ * https://github.com/jamesstringerparsec/Easy-GPU-PV/issues/226
+ * ¿Hay alguna forma de modificar el bit del hipervisor para evitar esas detecciones de VM?
+ * Esto es simple en VMware configurando "hypervisor.cpuid.v0 = "FALSE"" en el archivo vmx.
+ *
+ */
 typedef enum flags_mask { // https://en.wikipedia.org/wiki/FLAGS_register
     flags_mask_Carry_flag                = 0x00000001, // flag CF   (Status)   1bit  (bit 0)
     flags_mask_Reserved_EFLAGS           = 0x00000002, // siempre en 1 en EFLAGS    (bit 1)
@@ -230,6 +238,59 @@ typedef enum cpuid_requests {
      * 
      */
 
+    CPUID_SOC_VENDOR_ATTRIBUTE_ENUMRATION       = 0x17,
+    /*
+     *
+     * Esta hoja está presente en sistemas donde un núcleo IP de CPU x86 está implementado en un SoC (sistema en chip) de otro proveedor; mientras que 
+     * las otras hojas de CPUID brindan información sobre el núcleo de CPU x86, esta hoja proporciona información sobre el SoC. Esta hoja toma un índice 
+     * de subhoja en ECX.
+     * 
+     */
+
+    CPUID_INTEL_KEY_LOCKER_FEATURES             = 0x19,
+    // Esta hoja proporciona información sobre las funciones de Intel Key Locker en EAX, EBX y ECX. EDX está reservado.
+
+    CPUID_RESERVED_FOR_TDX_ENUMERATION          = 0x21,
+    /*
+     *
+     * Cuando Intel TDX (Trust Domain Extensions) está activo, el módulo TDX interceptará los intentos de ejecutar la 
+     * instrucción CPUID por parte de un invitado TD (Trust Domain). Este módulo, cuando se invoca CPUID con EAX=21h y ECX=0 (hoja 21h, subhoja 0), 
+     * devolverá el índice de la subhoja más alta admitida para la hoja 21h en EAX y una cadena de identificación del proveedor del módulo TDX como 
+     * Cadena ASCII de 12 bytes en EBX,EDX,ECX (en ese orden). La implementación del propio módulo de Intel devuelve la cadena de identificación del 
+     * proveedor "IntelTDX" (con cuatro espacios finales)[102] - para este módulo, la información de características adicionales no está disponible 
+     * a través de CPUID y debe obtenerse a través de la instrucción TDCALL específica de TDX.
+     * 
+     * Esta hoja está reservada en hardware y (en procesadores cuya hoja básica más alta sea 21 h o superior) 
+     * devolverá 0 en EAX/EBX/ECX/EDX cuando se ejecute directamente en la CPU.
+     * 
+     */
+
+    CPUID_AVX10_FEATURES                        = 0x24, // se espera recibir en ECX un valor enum CPUID_AVX10_Features_page
+    // Esto devuelve una subhoja máxima admitida en EAX y información de características AVX10 en EBX.[94] (ECX y EDX están reservados).
+
+    // Para hipervisores y maquinas virtuales -> EAX=40000000h-4FFFFFFFh: Reserved for Hypervisor use:
+    /*
+     *
+     * Cuando la instrucción CPUID se ejecuta bajo la virtualización Intel VT-x o AMD-v, será interceptada por el hipervisor, lo que le permitirá devolver 
+     * indicadores de características CPUID que difieren de los del hardware subyacente. Las hojas de CPUID 40000000h a 4FFFFFFFh no están implementadas 
+     * en el hardware y están reservadas para que las utilicen los hipervisores para proporcionar identificación específica del hipervisor e información 
+     * de características a través de este mecanismo de interceptación.
+     * 
+     * Para la hoja 40000000h, se espera que el hipervisor devuelva el índice de la hoja CPUID del hipervisor admitida más alta en EAX y una cadena de 
+     * ID de hipervisor de 12 caracteres en EBX,ECX,EDX (en ese orden). Para la hoja 40000001h, el hipervisor puede devolver una firma de identificación 
+     * de interfaz en EAX, p. Los hipervisores que deseen anunciar que son compatibles con Hyper-V pueden devolver 0x31237648—“Hv#1” en EAX.[103][104] 
+     * Los formatos de las hojas 40000001h y hasta la hoja más alta admitida son específicos del hipervisor. Los hipervisores que implementan estas hojas 
+     * normalmente también configurarán el bit 31 de ECX para la hoja 1 de CPUID para indicar su presencia.
+     * 
+     * Los hipervisores que exponen más de una interfaz de hipervisor pueden proporcionar conjuntos adicionales de hojas de CPUID para las interfaces 
+     * adicionales, con un espaciado de hojas de 100 h por interfaz. Por ejemplo, cuando QEMU está configurado para proporcionar interfaces Hyper-V y 
+     * KVM, proporcionará información de Hyper-V a partir de la hoja CPUID 40000000h e información de KVM a partir de la hoja 40000100h.[105][106]
+     * 
+     */
+    CPUID_RESERVED_FOR_HYPERVISOR_USE           = 0x40000000,
+
+    // CPUID extendidos, comprobar con CPUID eax = 0 el valor max de entrada admitido. Si el valor retornado en EAX no es superior, no se puede realizar estos
+    // llamados.
     CPUID_INTELEXTENDED                         = 0x80000000,
     CPUID_INTELFEATURES,
     CPUID_INTELBRANDSTRING,
@@ -256,10 +317,15 @@ typedef enum CPUID_SGX_capabilities_page {
                                                    // se usa junto a CPUID_SGX_CAPATIBLES, 
 } CPUID_SGX_capabilities_page;  // donde este se pasa a EAX, y a ECX un CPUID_SGX_CAPATIBLES
 typedef enum CPUID_Processor_Trace_page { 
-    CPUID_Processor_Trace_page_1
+    CPUID_Processor_Trace_page_1,
+    CPUID_Processor_Trace_page_2
                                                    // se usa junto a CPUID_PROCESSOR_TRACE, 
 } CPUID_Processor_Trace_page;  // donde este se pasa a EAX, y a ECX un CPUID_PROCESSOR_TRACE
-
+typedef enum CPUID_AVX10_Features_page { 
+    CPUID_AVX10_Features_page_1,
+    CPUID_AVX10_Features_page_2
+                                                   // se usa junto a CPUID_AVX10_FEATURES, 
+} CPUID_AVX10_Features_page;  // donde este se pasa a EAX, y a ECX un CPUID_AVX10_FEATURES
 
 
 #pragma pack(push)
@@ -503,37 +569,51 @@ typedef enum Processor_Family_ID_Intel {
 
 // https://wiki.osdev.org/CPUID
 // Vendor strings from CPUs.
-#define CPUID_VENDOR_AMD           "AuthenticAMD"
-#define CPUID_VENDOR_AMD_OLD       "AMDisbetter!" // Early engineering samples of AMD K5 processor
-#define CPUID_VENDOR_INTEL         "GenuineIntel"
-#define CPUID_VENDOR_VIA           "VIA VIA VIA "
-#define CPUID_VENDOR_TRANSMETA     "GenuineTMx86"
-#define CPUID_VENDOR_TRANSMETA_OLD "TransmetaCPU"
-#define CPUID_VENDOR_CYRIX         "CyrixInstead"
-#define CPUID_VENDOR_CENTAUR       "CentaurHauls"
-#define CPUID_VENDOR_NEXGEN        "NexGenDriven"
-#define CPUID_VENDOR_UMC           "UMC UMC UMC "
-#define CPUID_VENDOR_SIS           "SiS SiS SiS "
-#define CPUID_VENDOR_NSC           "Geode by NSC"
-#define CPUID_VENDOR_RISE          "RiseRiseRise"
-#define CPUID_VENDOR_VORTEX        "Vortex86 SoC"
-#define CPUID_VENDOR_AO486         "MiSTer AO486"
-#define CPUID_VENDOR_AO486_OLD     "GenuineAO486"
-#define CPUID_VENDOR_ZHAOXIN       "  Shanghai  "
-#define CPUID_VENDOR_HYGON         "HygonGenuine"
-#define CPUID_VENDOR_ELBRUS        "E2K MACHINE "
+#define CPUID_VENDOR_AMD                   "AuthenticAMD"
+#define CPUID_VENDOR_AMD_OLD               "AMDisbetter!" // Early engineering samples of AMD K5 processor
+#define CPUID_VENDOR_INTEL                 "GenuineIntel"
+#define CPUID_VENDOR_VIA                   "VIA VIA VIA "
+#define CPUID_VENDOR_TRANSMETA             "GenuineTMx86"
+#define CPUID_VENDOR_TRANSMETA_OLD         "TransmetaCPU"
+#define CPUID_VENDOR_CYRIX                 "CyrixInstead"
+#define CPUID_VENDOR_CENTAUR               "CentaurHauls"
+#define CPUID_VENDOR_NEXGEN                "NexGenDriven"
+#define CPUID_VENDOR_UMC                   "UMC UMC UMC "
+#define CPUID_VENDOR_SIS                   "SiS SiS SiS "
+#define CPUID_VENDOR_NSC                   "Geode by NSC"
+#define CPUID_VENDOR_RISE                  "RiseRiseRise"
+#define CPUID_VENDOR_VORTEX                "Vortex86 SoC"
+#define CPUID_VENDOR_AO486                 "MiSTer AO486"
+#define CPUID_VENDOR_AO486_OLD             "GenuineAO486"
+#define CPUID_VENDOR_ZHAOXIN               "  Shanghai  "
+#define CPUID_VENDOR_HYGON                 "HygonGenuine"
+#define CPUID_VENDOR_ELBRUS                "E2K MACHINE "
  
-// Vendor strings from hypervisors.
-#define CPUID_VENDOR_QEMU          "TCGTCGTCGTCG"
-#define CPUID_VENDOR_KVM           " KVMKVMKVM  "
-#define CPUID_VENDOR_VMWARE        "VMwareVMware"
-#define CPUID_VENDOR_VIRTUALBOX    "VBoxVBoxVBox"
-#define CPUID_VENDOR_XEN           "XenVMMXenVMM"
-#define CPUID_VENDOR_HYPERV        "Microsoft Hv"
-#define CPUID_VENDOR_PARALLELS     " prl hyperv "
-#define CPUID_VENDOR_PARALLELS_ALT " lrpepyh vr " // Sometimes Parallels incorrectly encodes "prl hyperv" as "lrpepyh vr" due to an endianness mismatch.
-#define CPUID_VENDOR_BHYVE         "bhyve bhyve "
-#define CPUID_VENDOR_QNX           " QNXQVMBSQG "
+// https://www.qemu.org/docs/master/system/i386/hyperv.html
+// CPUID EAX=40000x00h: 12-character Hypervisor ID string in EBX,ECX,EDX
+#define CPUID_VENDOR_HYPERV                "Microsoft Hv" // https://learn.microsoft.com/en-us/virtualization/hyper-v-on-windows/tlfs/feature-discovery
+#define CPUID_VENDOR_KVM1                  " KVMKVMKVM  "
+#define CPUID_VENDOR_KVM2                  "KVMKVMKVM\0\0\0"
+#define CPUID_VENDOR_KVM3                  "Linux KVM Hv"
+#define CPUID_VENDOR_BHYVE1                "bhyve bhyve "
+#define CPUID_VENDOR_BHYVE2                "BHyVE BHyVE "
+#define CPUID_VENDOR_XEN                   "XenVMMXenVMM"
+#define CPUID_VENDOR_QEMU                  "TCGTCGTCGTCG"
+#define CPUID_VENDOR_PARALLELS_ALT         " lrpepyh vr " // Sometimes Parallels incorrectly encodes "prl hyperv" as "lrpepyh vr" due to an endianness mismatch.s
+#define CPUID_VENDOR_PARALLELS             " prl hyperv "
+#define CPUID_VENDOR_VMWARE                "VMwareVMware"
+#define CPUID_VENDOR_PPROJECT_ACRN         "ACRNACRNACRN"
+#define CPUID_VENDOR_VIRTUALBOX            "VBoxVBoxVBox"
+#define CPUID_VENDOR_QNX1                  " QNXQVMBSQG "
+#define CPUID_VENDOR_QNX2                  "QXNQSBMV"      // El método de detección del hipervisor QNX proporcionado en la documentación oficial de QNX[117] 
+                                                           //verifica solo los primeros 8 caracteres de la cadena, como se proporciona en EBX y ECX (incluido 
+                                                           // un intercambio de endianness ); EDX se ignora y puede tomar cualquier valor.
+#define CPUID_VENDOR_NETBSD_NVMM           "___ NVMM ___"
+#define CPUID_VENDOR_OPENBSD_VMM           "OpenBSDVMM58"
+#define CPUID_VENDOR_INTEL_HAXM            "HAXMHAXMHAXM"
+#define CPUID_VENDOR_INTEL_KGT             "EVMMEVMMEVMM"
+#define CPUID_VENDOR_UNISYS_S_PAR          "UnisysSpar64"
+#define CPUID_VENDOR_LOCKHEED_MARTIN_LMHS  "SRESRESRESRE"
 
 /* 
     caracteristicas de la cpu:
