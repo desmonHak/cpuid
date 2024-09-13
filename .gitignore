@@ -1,1 +1,5 @@
 *.exe
+cpuid_apple.*
+*.txt
+cpuid_dump*
+pruebas*

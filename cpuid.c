@@ -3,20 +3,26 @@
 
 #include "cpuid.h"
 
-uint64_t rdtsc() {
+#define M_RDTSC_ASM(var1, var2) __asm__ volatile ( "rdtsc" : "=a" (var1), "=d" (var2));
+
+static inline uint64_t rdtsc() {
     /*
      * El valor obtenido mediante la instrucción rdtsc puede variar debido a varias razones, incluyendo la tecnología de Turbo Boost de 
      * Intel, que aumenta dinámicamente la frecuencia del procesador por encima de su frecuencia base.
+     * 
      * El valor de rdtsc está relacionado con la frecuencia base de la CPU y no necesariamente con la frecuencia instantánea actual, que puede estar 
      * afectada por Turbo Boost. Para obtener una medición precisa de la frecuencia actual del procesador, puedes usar una combinación de la 
      * instrucción rdtsc y las funciones del sistema operativo que proporcionan la frecuencia actual de la CPU, o hacer uso de las instrucciones 
      * CPUID para obtener información sobre el Turbo Boost.
+     * 
      * Apartir del Pentium Pro se empezo a realizar el "out-of-order execution", lo que quiere decir que "rdtsc" puede ejecutarse ante de lo previsto
      * haciendo que la marca de tiempo ya no sea confiable.
+     * 
      * Para procesadores Pentium M (familia [06H], modelos [09H, 0DH]); para procesadores Pentium 4, procesadores Intel Xeon (familia [0FH], modelos 
      *      [00H, 01H o 02H]); y para procesadores de la familia P6: el contador de marca de tiempo aumenta con cada ciclo de reloj interno del procesador. 
      *      El ciclo de reloj interno del procesador está determinado por la relación actual entre el reloj del núcleo y el reloj del bus. Las transiciones 
      *      de la tecnología Intel SpeedStep también pueden afectar el reloj del procesador.
+     * 
      * Para procesadores Pentium 4, procesadores Intel Xeon (familia [0FH], modelos [03H y superiores]); para procesadores Intel Core Solo 
      *      e Intel Core Duo (familia [06H], modelo [0EH]); para el procesador Intel Xeon serie 5100 y los procesadores Intel Core 2 Duo 
      *      (familia [06H], modelo [0FH]); para procesadores Intel Core 2 e Intel Xeon (familia [06H], display_model [17H]); 
@@ -28,18 +34,24 @@ uint64_t rdtsc() {
      * La configuración específica del procesador determina el comportamiento. El comportamiento constante del TSC garantiza que la duración de 
      * cada tic del reloj sea uniforme y permite utilizar el TSC como temporizador de pared incluso si el núcleo del procesador cambia de frecuencia. 
      * Este es el comportamiento arquitectónico de todos los procesadores Intel posteriores.
+     * 
      * Los procesadores AMD hasta el núcleo K8 siempre incrementaban el contador de marca de tiempo en cada ciclo de reloj.
      * Por lo tanto, las funciones de administración de energía pudieron cambiar la cantidad de incrementos por segundo y los valores podrían 
      * desincronizarse entre diferentes núcleos o procesadores en el mismo sistema. Para Windows, AMD proporciona una utilidad[7] para sincronizar 
      * periódicamente los contadores en CPU de múltiples núcleos. Desde la familia 10h (Barcelona/Phenom), los chips AMD cuentan con un TSC constante, 
      * que puede ser controlado por la velocidad HyperTransport o por el estado P más alto. Un bit CPUID (Fn8000_0007:EDX_8) anuncia esto; Las CPU 
      * Intel también informan su TSC invariante en ese bit.
+     * 
+     * Por tanto, se puede usar dicha instruccion para averiguar la frecuencia base de la CPU(no siempre seguro, mas no la del momento actual
+     * 
      */
     unsigned int lo, hi;
-    __asm__ volatile (
+    /*__asm__ volatile (
         "rdtsc"
         : "=a" (lo), "=d" (hi)
-    );
+    );*/
+    M_RDTSC_ASM(lo, hi)
+    printf("rdtsc, lo(%llu), hi(%llu)\n", lo, hi);
     return ((uint64_t)hi << 32) | lo;
 }
 

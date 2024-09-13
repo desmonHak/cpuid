@@ -1,4 +1,6 @@
 #include "cpuid.h"
+#include <windows.h>
+
 
 int main() {
 
@@ -259,6 +261,23 @@ int main() {
     double cpu_freq_ghz = (double)tsc_diff / 1e9; // 1 segundo = 1e9 ciclos
 
     printf("CPU Frequency: %.2f GHz\n", cpu_freq_ghz);
+    printf("tick's de inicio: %llu\n", start_tsc);
+    printf("tick's de final: %llu\n", end_tsc);
+    printf("tick's de final - inicio: %llu\n", end_tsc - start_tsc);
+
+    printf("tiempo que a pasado: %llu\n", (end_tsc - start_tsc) / TSCFreq);
+
+    start_tsc = rdtsc();
+    end_tsc = rdtsc();
+    printf("tick's de inicio: %llu\n", start_tsc);
+    printf("tick's de final: %llu\n", end_tsc);
+    printf("tick's de final - inicio: %llu\n", end_tsc - start_tsc);
+
+    start_tsc = rdtsc();
+    end_tsc = rdtsc();
+    printf("tick's de inicio: %llu\n", start_tsc);
+    printf("tick's de final: %llu\n", end_tsc);
+    printf("tick's de final - inicio: %llu\n", end_tsc - start_tsc);
 
     
     code = CPUID_SOC_VENDOR_ATTRIBUTE_ENUMRATION;
