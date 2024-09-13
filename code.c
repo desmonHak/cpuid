@@ -1,6 +1,11 @@
 #include <stdint.h>
 #include <stdlib.h>
-https://en.wikichip.org/wiki/WikiChip
+// https://en.wikichip.org/wiki/WikiChip
+
+/*
+Coffe Lake: https://en.wikichip.org/wiki/intel/microarchitectures/coffee_lake
+*/
+
 /*Alder Lake S CPU's(https://en.wikichip.org/wiki/intel/cores/alder_lake_s)
 Model	Launched	Price	Family	Cores	Threads	L3$	TDP	Frequency	Turbo	Max Mem	Name	Frequency	Turbo
 i5-12600K	4 November 2021	$ 289.00, $ 299.00	Core i5	10	16	2 MiB, 18 MiB	125 W	3.7 GHz		128 GiB	UHD Graphics 770	300 MHz	1,450 MHz
