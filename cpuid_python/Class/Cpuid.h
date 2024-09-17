@@ -116,8 +116,8 @@ typedef struct {
     PyObject*  q_elements; /* Los elementos en la cola como una lista de Python */
 } Cpuid;
 
-PyDoc_STRVAR(Cpuid_doc, "My objects");
-static PyTypeObject Cpuid_type_Class;
+PyDoc_STRVAR(Method_Cpuid_Class(doc), "My objects");
+static PyTypeObject Method_Cpuid_Class(type_Class);
 
 // Metodos Inprescindibles y porpias de Python
 static void      Method_Cpuid_Class(init_type_object) (void);
@@ -132,7 +132,7 @@ static int       Method_Cpuid_Class(clear)            (Cpuid *self);
 static PyObject* Method_Cpuid_Class(cpuid)              (Cpuid *self, PyObject *args);
 
 // Definimos los métodos de la clase
-static PyMethodDef Cpuid_methods[] = {
+static PyMethodDef Method_Cpuid_Class(methods)[] = {
     {"cpuid", (PyCFunction)Method_Cpuid_Class(cpuid), METH_VARARGS, "Suma un número al valor actual"},
     {NULL}  // Indicador de fin de la lista de métodos
 };

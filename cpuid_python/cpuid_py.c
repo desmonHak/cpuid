@@ -7,7 +7,10 @@ Incluido <stdio.h>, <string.h>, <errno.h>, y <stdlib.h>
 #define DEBUG_ENABLE_CPUID
 
 #include "global.h"
+
+// Clases del modulo
 #include "Class/Cpuid.h"
+#include "Class/Register.h"
 
 FILE *fp;
 static PyObject *StringTooShortError = NULL;
@@ -94,20 +97,36 @@ static struct PyModuleDef cpuid_native = {
 PyMODINIT_FUNC PyInit_cpuid_x86(void) {
     _ACTIVATE_COLORS_ANSI_WIN__();
 
-    // Preparamos el tipo Cpuid
+    // Clase Cpuid
     Method_Cpuid_Class(init_type_object)();
-    if (PyType_Ready(&Cpuid_type_Class) < 0) {
-        debug_print_cpuid("PyType_Ready failed\n");
+    if (PyType_Ready(&Method_Cpuid_Class(type_Class)) < 0) {
+        debug_print_cpuid("PyType_Ready Cpuid Class failed\n");
         return NULL;
     }
+    
+    // Clase Registro
+    Method_Register_Class(init_type_object)();
+    if (PyType_Ready(&Method_Register_Class(type_Class)) < 0) {
+        debug_print_cpuid("PyType_Ready Register Class failed\n");
+        return NULL;
+    }
+
 
     /* Assign module value */
     PyObject *module = PyModule_Create(&cpuid_native);
     if (module == NULL) return NULL;
 
-    Py_INCREF(&Cpuid_type_Class);
-    if (PyModule_AddObject(module, "Cpuid", (PyObject *) &Cpuid_type_Class) < 0) {
-        Py_DECREF(&Cpuid_type_Class);
+    // Clase Cpuid
+    Py_INCREF(&Method_Cpuid_Class(type_Class));
+    if (PyModule_AddObject(module, "Cpuid", (PyObject *) &Method_Cpuid_Class(type_Class)) < 0) {
+        Py_DECREF(&Method_Cpuid_Class(type_Class));
+        Py_DECREF(module);
+        return NULL;
+    }
+    // Clase registro
+    Py_INCREF(&Method_Register_Class(type_Class));
+    if (PyModule_AddObject(module, "Register", (PyObject *) &Method_Register_Class(type_Class)) < 0) {
+        Py_DECREF(&Method_Register_Class(type_Class));
         Py_DECREF(module);
         return NULL;
     }

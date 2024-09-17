@@ -4,7 +4,7 @@
 #include "Cpuid.h"
 
 static void Method_Cpuid_Class(init_type_object)(void) {
-    Cpuid_type_Class = (PyTypeObject){
+    Method_Cpuid_Class(type_Class) = (PyTypeObject){
         /*
         * Este tipo también tiene algunos métodos personalizados, por lo que necesitamos pasar 
         * una matriz a PyTypeObject.tp_methods.
@@ -26,75 +26,78 @@ static void Method_Cpuid_Class(init_type_object)(void) {
         * que define la clase.
         */
         PyVarObject_HEAD_INIT(&PyType_Type, 0)
-        "cpuid.Cpuid",                              /* tp_name */
-        sizeof(Cpuid),                              /* tp_basicsize 
-                                                    * PyTypeObject.tp_basicsize se establece para que 
-                                                    * tenga el tamaño de la estructura de cola de salida. 
-                                                    * Esto significa que las instancias de una Cpuid tienen 
-                                                    * el tamaño de una Cpuid.
-                                                    */
-        0,                                          /* tp_itemsize 
-                                                    * PyTypeObject.tp_itemsize se establece en 0 porque todas las 
-                                                    * instancias de una Cpuid usan la misma cantidad de espacio. 
-                                                    * Este campo está diseñado para implementar colecciones 
-                                                    * compactas como tuple.
-                                                    */
-        (destructor) Cpuid_dealloc,                 /* tp_dealloc 
-                                                    * PyTypeObject.tp_dealloc se establece en una función 
-                                                    * de desasignación. Esta función necesita liberar 
-                                                    * la referencia de la cola a q_elements.
-                                                    */
-        0,                                          /* tp_print */
-        0,                                          /* tp_getattr */
-        0,                                          /* tp_setattr */
-        0,                                          /* tp_reserved */
-        (reprfunc) Cpuid_repr,                      /* tp_repr */
-        0,                                          /* tp_as_number */
-        0,                                          /* tp_as_sequence */
-        0,                                          /* tp_as_mapping */
-        0,                                          /* tp_hash */
-        0,                                          /* tp_call */
-        0,                                          /* tp_str */
-        0,                                          /* tp_getattro */
-        0,                                          /* tp_setattro */
-        0,                                          /* tp_as_buffer */
+        "cpuid.Cpuid",                                               /* tp_name */
+        sizeof(Cpuid),                                               /* tp_basicsize 
+                                                                     * PyTypeObject.tp_basicsize se establece para que 
+                                                                     * tenga el tamaño de la estructura de cola de salida. 
+                                                                     * Esto significa que las instancias de una Cpuid tienen 
+                                                                     * el tamaño de una Cpuid.
+                                                                     */
+        0,                                                           /* tp_itemsize 
+                                                                     * PyTypeObject.tp_itemsize se establece en 0 porque todas las 
+                                                                     * instancias de una Cpuid usan la misma cantidad de espacio. 
+                                                                     * Este campo está diseñado para implementar colecciones 
+                                                                     * compactas como tuple.
+                                                                     */
+        (destructor)Method_Cpuid_Class(dealloc),                 /* tp_dealloc 
+                                                                     * PyTypeObject.tp_dealloc se establece en una función 
+                                                                     * de desasignación. Esta función necesita liberar 
+                                                                     * la referencia de la cola a q_elements.
+                                                                     */
+        0,                                                           /* tp_print */
+        0,                                                           /* tp_getattr */
+        0,                                                           /* tp_setattr */
+        0,                                                           /* tp_reserved */
+        (reprfunc)Method_Cpuid_Class(repr),                       /* tp_repr */
+        0,                                                           /* tp_as_number */
+        0,                                                           /* tp_as_sequence */
+        0,                                                           /* tp_as_mapping */
+        0,                                                           /* tp_hash */
+        0,                                                           /* tp_call */
+        0,                                                           /* tp_str */
+        0,                                                           /* tp_getattro */
+        0,                                                           /* tp_setattro */
+        0,                                                           /* tp_as_buffer */
         Py_TPFLAGS_DEFAULT |
-        Py_TPFLAGS_HAVE_GC,                         /* tp_flags 
-                                                    * PyTypeObject.tp_flags se establece en 
-                                                    * Py_TPFLAGS_DEFAULT | Py_TPFLAGS_HAVE_GC. Esto 
-                                                    * significa que tenemos tanto los indicadores predeterminados 
-                                                    * como el bit HAVE_GC. Debido a que el bit 
-                                                    * Py_TPFLAGS_HAVE_GC está configurado, también tenemos una 
-                                                    * función PyTypeObject.tp_traverse y una función 
-                                                    * PyTypeObject.tp_clear.
-                                                    */
-        .tp_doc             = Cpuid_doc,                 /* tp_doc */ // != PyDoc_STR
-        .tp_traverse        = (traverseproc) Cpuid_traverse, /* tp_traverse */ //(traverseproc) Cpuid_traverse,
-        .tp_clear           = (inquiry) Cpuid_clear,        /* tp_clear */ //(inquiry) Cpuid_clear,        
-        .tp_richcompare     = 0,                         /* tp_richcompare */
-        .tp_weaklistoffset  = 0,                         /* tp_weaklistoffset */
-        .tp_iter            = 0,                         /* tp_iter */
-        .tp_iternext        = 0,                         /* tp_iternext */
-        .tp_methods         = Cpuid_methods,          /* tp_methods */
-        .tp_members         = 0,                         /* tp_members */
-        .tp_getset          = 0,                         /* tp_getset */
-        .tp_base            = 0,                         /* tp_base */
-        .tp_dict            = 0,                         /* tp_dict */
-        .tp_descr_get       = 0,                         /* tp_descr_get */
-        .tp_descr_set       = 0,                         /* tp_descr_set */
-        .tp_dictoffset      = 0,                         /* tp_dictoffset */
-        .tp_init            = (initproc) Cpuid_init,  /* 
-                                                        * tp_init 
-                                                        * MyClass.__init__ --> tp_init
-                                                        */
-        .tp_alloc           = 0,                          /* tp_alloc */
-        .tp_new             = Cpuid_new,            /* tp_new 
-                                                        * Si PyTypeObject.tp_new es NULL, no puede crear 
-                                                        * nuevas instancias de la clase.
-                                                        */
+        Py_TPFLAGS_HAVE_GC,                                          /* tp_flags 
+                                                                      * PyTypeObject.tp_flags se establece en 
+                                                                      * Py_TPFLAGS_DEFAULT | Py_TPFLAGS_HAVE_GC. Esto 
+                                                                      * significa que tenemos tanto los indicadores predeterminados 
+                                                                      * como el bit HAVE_GC. Debido a que el bit 
+                                                                      * Py_TPFLAGS_HAVE_GC está configurado, también tenemos una 
+                                                                      * función PyTypeObject.tp_traverse y una función 
+                                                                      * PyTypeObject.tp_clear.
+                                                                      */
+        .tp_doc             = Method_Cpuid_Class(doc),                             /* tp_doc */ // != PyDoc_STR
+        .tp_traverse        = (traverseproc) Method_Cpuid_Class(traverse),         /* tp_traverse */ //(traverseproc) Cpuid_traverse,
+        .tp_clear           = (inquiry) Method_Cpuid_Class(clear),                 /* tp_clear */ //(inquiry) Cpuid_clear,        
+        .tp_richcompare     = 0,                                     /* tp_richcompare */
+        .tp_weaklistoffset  = 0,                                     /* tp_weaklistoffset */
+        .tp_iter            = 0,                                     /* tp_iter */
+        .tp_iternext        = 0,                                     /* tp_iternext */
+        .tp_methods         = Method_Cpuid_Class(methods),                         /* tp_methods */
+        .tp_members         = 0,                                     /* tp_members */
+        .tp_getset          = 0,                                     /* tp_getset 
+                                                                      * Metodos getter y setter para los atributos de 
+                                                                      * la clase.
+                                                                      */
+        .tp_base            = 0,                                     /* tp_base */
+        .tp_dict            = 0,                                     /* tp_dict */
+        .tp_descr_get       = 0,                                     /* tp_descr_get */
+        .tp_descr_set       = 0,                                     /* tp_descr_set */
+        .tp_dictoffset      = 0,                                     /* tp_dictoffset */
+        .tp_init            = (initproc)Method_Cpuid_Class(init), /* 
+                                                                      * tp_init 
+                                                                      * MyClass.__init__ --> tp_init
+                                                                      */
+        .tp_alloc           = 0,                                      /* tp_alloc */
+        .tp_new             = Method_Cpuid_Class(new),             /* tp_new 
+                                                                       * Si PyTypeObject.tp_new es NULL, no puede crear 
+                                                                       * nuevas instancias de la clase.
+                                                                       */
     };
     // Finalmente, llamamos a PyType_Ready
-    if (PyType_Ready(&Cpuid_type_Class) < 0)
+    if (PyType_Ready(&Method_Cpuid_Class(type_Class)) < 0)
         return;
 }
 
