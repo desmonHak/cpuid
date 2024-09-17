@@ -166,15 +166,22 @@ static int Method_Register_Class(init)(Register *self, PyObject *args, PyObject 
     self->edx = 0;
     self->q_maxsize = 10;  // valor por defecto
     
+    uint32_t eax = 0, ebx = 0, ecx = 0, edx = 0;
+
     // Parseamos los argumentos de __init__(self, value=0)
     if (!PyArg_ParseTupleAndKeywords(
-            args, kwds, "|IIII", kwlist,
-            &self->eax, &self->ebx, &self->ecx, &self->edx)
+            args, kwds, "|kkkk", kwlist,
+            &eax, &ebx, &ecx, &edx)
         ){
         debug_print_cpuid("PyArg_ParseTuple failed\n");
         return -1;
     }
-    
+
+    self->eax = (uint32_t)eax;
+    self->ebx = (uint32_t)ebx;
+    self->ecx = (uint32_t)ecx;
+    self->edx = (uint32_t)edx;
+
     debug_print_cpuid("Parsed args: eax=0x%p, ebx=0x%p, edx=0x%p, ecx=0x%p, maxsize=%zd\n",
                         self->eax, self->ebx, self->ecx, self->edx, self->q_maxsize);
 
@@ -183,7 +190,7 @@ static int Method_Register_Class(init)(Register *self, PyObject *args, PyObject 
         debug_print_cpuid("Creating new q_elements\n");
         self->q_elements = PyList_New(0);
         if (self->q_elements == NULL) {
-            debug_print_cpuid("Failed to create q_elements\n");
+            debug_print_cpuid("Failed to create q_elements in init\n");
             return -1;
         }
     }
@@ -194,19 +201,24 @@ static int Method_Register_Class(init)(Register *self, PyObject *args, PyObject 
 
 static PyObject *Method_Register_Class(new)(PyTypeObject *type, PyObject *args, PyObject *kwds) {
     debug_print_cpuid("Entering Register_new\n");
-    Register *self;
-    self = (Register *)type->tp_alloc(type, 0);
+    Register *self = (Register *)type->tp_alloc(type, 0);
     if (self != NULL) {
-        self->eax = 0; self->ebx = self->eax; self->ecx = self->eax; self->edx = self->eax;
+        self->eax = 0xFFFFFFFF;  // Valor inicial que indica "no inicializado"
+        self->ebx = 0xFFFFFFFF;
+        self->ecx = 0xFFFFFFFF;
+        self->edx = 0xFFFFFFFF;
+
         self->q_maxsize = 10;  // valor por defecto
-        self->q_elements = PyList_New(0);
-        if (self->q_elements == NULL) {
-            debug_print_cpuid("Failed to create q_elements in new\n");
-            Py_DECREF(self);
-            return NULL;
-        }
+
+        // Lo inicializaremos en __init__
+        //self->q_elements = PyList_New(0);
+        //if (self->q_elements == NULL) {
+        //    Py_DECREF(self);
+        //    PyErr_SetString(PyExc_MemoryError, "Failed to create q_elements in new");
+        //    return NULL;
+        //}
     } else {
-        debug_print_cpuid("Failed to allocate Register\n");
+        PyErr_SetString(PyExc_MemoryError, "Failed to allocate Register");
         return NULL;
     }
     debug_print_cpuid("Exiting Register_new successfully\n");
@@ -270,7 +282,7 @@ static PyObject* Method_Register_Class(repr)(Register *self) {
     debug_print_cpuid("Creating repr string\n");
     result = PyUnicode_FromFormat(
         "Register(maxsize=%zd, current_elements=%zd, "
-        "eax=0x%x, ebx=0x%x, ecx=0x%x, edx=0x%x)",
+        "eax=0x%08x, ebx=0x%08x, ecx=0x%08x, edx=0x%08x)",
         self->q_maxsize, element_count,
         self->eax, self->ebx, self->ecx, self->edx
     );

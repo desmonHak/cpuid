@@ -51,10 +51,22 @@ static PyMethodDef Method_Register_Class(methods)[] = {
 
 // atributos de la clase:
 static PyGetSetDef Method_Register_Class(getsetters)[] = {
-    {"eax", (getter)Method_Register_Class(get_eax), (setter)Register_set_eax, "Registro eax", NULL},
-    {"ebx", (getter)Method_Register_Class(get_ebx), (setter)Register_set_ebx, "Registro ebx", NULL},
-    {"ecx", (getter)Method_Register_Class(get_ecx), (setter)Register_set_ecx, "Registro ecx", NULL},
-    {"edx", (getter)Method_Register_Class(get_edx), (setter)Register_set_edx, "Registro edx", NULL},
+    {
+        "eax", (getter)Method_Register_Class(get_eax),
+        (setter)Method_Register_Class(set_eax), "Registro eax", NULL
+    },
+    {
+        "ebx", (getter)Method_Register_Class(get_ebx), 
+        (setter)Method_Register_Class(set_ebx), "Registro ebx", NULL
+    },
+    {
+        "ecx", (getter)Method_Register_Class(get_ecx), 
+        (setter)Method_Register_Class(set_ecx), "Registro ecx", NULL
+    },
+    {
+        "edx", (getter)Method_Register_Class(get_edx), 
+        (setter)Method_Register_Class(set_edx), "Registro edx", NULL
+    },
     {NULL}  // Sentinel
 };
 
