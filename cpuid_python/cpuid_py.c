@@ -4,9 +4,19 @@ Incluido <stdio.h>, <string.h>, <errno.h>, y <stdlib.h>
 */
 
 // Modo debug activado:
-#define DEBUG_ENABLE_CPUID
+//#define DEBUG_ENABLE_CPUID
 
 #include "global.h"
+
+// es necesario definir cpuid.c sin incluirlo, pues este se enlazara desde un
+// .o, de esta manera compilar desde Mingw32, TDM o cualquier otro que admita
+// las macros asm definidas en el archivo cpuid.c
+#ifndef __CPUID_C__
+#define __CPUID_C__
+#else
+#error "cpuid.c ya se encuentra incluido"
+#endif
+#include "../cpuid.h"
 
 // Clases del modulo
 #include "Class/Cpuid.h"

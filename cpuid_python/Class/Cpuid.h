@@ -2,7 +2,8 @@
 #ifndef __CLASS_CPUID_H__
 #define __CLASS_CPUID_H__
 
-
+#include "Register.h"
+#include "../../cpuid.h"
 /*
  * Si pensamos en el diseño de un PyObject, tenemos al menos dos campos: PyObject.ob_type, 
  * un puntero al tipo de la instancia, y luego PyObject.ob_refcnt, la cantidad de referencias 
@@ -109,7 +110,8 @@
 
 typedef struct {
     PyObject_HEAD
-    int value;  // campo para almacenar un número entero
+    int value;             // campo para almacenar un número entero
+    Register*  reg;        /* Puntero a la instancia de Register */
 
     PyObject   q_base;     /* Almacenamiento para nuestro tipo y recuento de referencias. */
     Py_ssize_t q_maxsize;  /* el número máximo de elementos en q_elements */

@@ -103,20 +103,30 @@ static void Method_Cpuid_Class(init_type_object)(void) {
 
 // Método __init__
 static int Method_Cpuid_Class(init)(Cpuid *self, PyObject *args, PyObject *kwds) {
-    int value = 0;
+    PyObject *reg_obj = NULL;
+    static char *kwlist[] = {"register", NULL};
+
     Py_ssize_t maxsize = 10;  // valor por defecto
     
     // Parseamos los argumentos de __init__(self, value=0)
-    if (!PyArg_ParseTuple(args, "|in", &value, &maxsize)) {
-        debug_print_cpuid("PyArg_ParseTuple failed\n");
+    if (!PyArg_ParseTupleAndKeywords(args, kwds, "O!", kwlist, &Register_type_Class, &reg_obj)) {
+        PyErr_SetString(PyExc_TypeError, "Se requiere una instancia de Register");
         return -1;
     }
     
-    debug_print_cpuid("Parsed args: value=%d, maxsize=%zd\n", value, maxsize);
+    self->reg = (Register *)reg_obj;
+    Py_INCREF(self->reg);  // Incrementamos la referencia al objeto Register
 
-    // Inicializamos el valor
-    self->value = value;
-    self->q_maxsize = maxsize;
+    debug_print_cpuid("Parsed args: maxsize=%zd,eax=0x%08x, ebx=0x%08x, ecx=0x%08x, edx=0x%08x\n",
+        maxsize, self->reg->eax, self->reg->ebx, self->reg->ecx, self->reg->edx);
+
+    call_cpuid(
+        self->reg->eax, self->reg->ebx, 
+        &(self->reg->eax), &(self->reg->ebx),
+        &(self->reg->ecx), &(self->reg->edx)
+    );
+    debug_print_cpuid("Before Call cpuid: maxsize=%zd,eax=0x%08x, ebx=0x%08x, ecx=0x%08x, edx=0x%08x\n",
+        maxsize, self->reg->eax, self->reg->ebx, self->reg->ecx, self->reg->edx);
 
     // Asegúrate de que q_elements esté inicializado
     if (self->q_elements == NULL) {
@@ -129,7 +139,6 @@ static int Method_Cpuid_Class(init)(Cpuid *self, PyObject *args, PyObject *kwds)
     }
     debug_print_cpuid("Exiting Cpuid_init successfully\n");
     return 0;
-
 }
 
 static PyObject *Method_Cpuid_Class(new)(PyTypeObject *type, PyObject *args, PyObject *kwds) {
@@ -140,6 +149,7 @@ static PyObject *Method_Cpuid_Class(new)(PyTypeObject *type, PyObject *args, PyO
         self->value = 0;
         self->q_maxsize = 10;  // valor por defecto
         self->q_elements = PyList_New(0);
+        self->reg = NULL;  // Inicializamos el puntero a NULL
         if (self->q_elements == NULL) {
             debug_print_cpuid("Failed to create q_elements in new\n");
             Py_DECREF(self);
@@ -153,20 +163,45 @@ static PyObject *Method_Cpuid_Class(new)(PyTypeObject *type, PyObject *args, PyO
     return (PyObject *)self;
 }
 
-// Método add
+// Método cpuid
 static PyObject* Method_Cpuid_Class(cpuid)(Cpuid *self, PyObject *args) {
-    int num;
+    CPUID_H(registers) my_regs = {
+        .eax = 0, .ebx = 0,
+        .ecx = 0, .edx = 0
+    };
     
-    // Parseamos los argumentos de add(self, num)
-    if (!PyArg_ParseTuple(args, "i", &num)) {
+    // Parseamos los argumentos de cpuid(self, eax, ecx)
+    if (!PyArg_ParseTuple(args, "kk", &(my_regs.eax), &(my_regs.ecx))) {
+        PyErr_SetString(PyExc_TypeError, "Se esperan dos argumentos: eax(pagina) y ecx(subpagina)");
         return NULL;
     }
+    debug_print_cpuid("Tey call Cpuid(EAX = 0x%08x, ECX = 0x%08x)\n");
     
-    // Realizamos la suma
-    self->value += num;
+    //is_cpuid_supported()
+    call_cpuid(
+        my_regs.eax, my_regs.ecx, 
+        &(my_regs.eax), &(my_regs.ebx),
+        &(my_regs.ecx), &(my_regs.edx)
+    );
+    self->reg->eax = my_regs.eax; self->reg->ebx = my_regs.ebx;
+    self->reg->ecx = my_regs.ecx; self->reg->edx = my_regs.edx;
+    PyObject *reg_args = Py_BuildValue(
+        "kkkk", my_regs.eax, my_regs.ebx, my_regs.ecx, my_regs.edx
+    );
+    PyObject *reg_obj = PyObject_CallObject(
+        (PyObject *) &Method_Register_Class(type_Class), 
+        reg_args
+    );
+    Py_DECREF(reg_args);
     
-    // Retornamos el nuevo valor
-    return PyLong_FromLong(self->value);
+    if (reg_obj == NULL) {
+        PyErr_SetString(PyExc_RuntimeError, "No se pudo crear una instancia de Register");
+        return NULL;
+    }
+
+
+    // Retornamos un objeto de tipo registro
+    return reg_obj;
 }
 
 static void Method_Cpuid_Class(dealloc)(Cpuid *self) {
@@ -181,6 +216,8 @@ static void Method_Cpuid_Class(dealloc)(Cpuid *self) {
      * importante para evitar liberar recursos que podrían estar siendo 
      * utilizados en otro lugar.
      */
+
+    Py_XDECREF(self->reg);  // Liberamos la referencia a Register
     
     // Llamamos al deallocador del tipo para liberar la memoria de self
     Py_TYPE(self)->tp_free((PyObject *)self);
@@ -195,8 +232,8 @@ static PyObject* Method_Cpuid_Class(repr)(Cpuid *self) {
         return NULL;
     }
     
-    Py_ssize_t element_count = 0;
-    if (self->q_elements != NULL) {
+    Py_ssize_t element_count = self->q_elements ? PyList_Size(self->q_elements) : 0;
+    /*if (self->q_elements != NULL) {
         if (PyList_Check(self->q_elements)) {
             element_count = PyList_Size(self->q_elements);
         } else {
@@ -205,12 +242,13 @@ static PyObject* Method_Cpuid_Class(repr)(Cpuid *self) {
         }
     } else {
         debug_print_cpuid("Warning: q_elements is NULL in repr\n");
-    }
+    }*/
 
     debug_print_cpuid("Creating repr string\n");
     result = PyUnicode_FromFormat(
-        "Cpuid(maxsize=%zd, current_elements=%zd)",
-        self->q_maxsize, element_count
+        "Cpuid(maxsize=%zd, current_elements=%zd, eax=0x%08x, ebx=0x%08x, ecx=0x%08x, edx=0x%08x)",
+        self->q_maxsize, element_count, self->reg->eax, self->reg->ebx, 
+        self->reg->ecx, self->reg->edx
     );
     
     if (result == NULL) {
@@ -224,11 +262,13 @@ static PyObject* Method_Cpuid_Class(repr)(Cpuid *self) {
 static int Method_Cpuid_Class(traverse)(Cpuid *self, visitproc visit, void *arg) {
     // Si q_elements tiene una referencia a un objeto Python, la recorremos
     Py_VISIT(self->q_elements);
+    Py_VISIT(self->reg);
     return 0;
 }
 static int Method_Cpuid_Class(clear)(Cpuid *self) {
     // Eliminamos la referencia a q_elements
     Py_CLEAR(self->q_elements);
+    Py_CLEAR(self->reg);
     return 0;
 }
 

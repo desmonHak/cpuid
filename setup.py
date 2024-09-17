@@ -20,7 +20,9 @@ def main():
             Extension(
                 "cpuid_x86", [
                     "cpuid_python/cpuid_py.c"
-                ]
+                ],
+                extra_link_args = ['cpuid.o']
+
             )
         ],
         classifiers=[

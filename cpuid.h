@@ -8,6 +8,19 @@
 #include <stdio.h>
 #include <stdint.h>
 
+#ifndef __GNUC__
+#define __asm__ asm
+#define volatile 
+#endif
+
+#define CPUID_H(name) cpuid_## name
+typedef struct CPUID_H(registers) {
+    uint32_t eax;
+    uint32_t ebx;
+    uint32_t ecx;
+    uint32_t edx;
+} CPUID_H(registers);
+
 /*
  *
  * https://github.com/jamesstringerparsec/Easy-GPU-PV/issues/226
@@ -448,7 +461,7 @@ typedef struct Additional_Information_Feature_Bits { // para CPUID con EAX=1; es
 } Additional_Information_Feature_Bits;
 
 
-```c
+
 typedef struct cpuid_feat_ecx {
     uint32_t SSE3       :1; // 00
     uint32_t PCLMUL     :1; // 01

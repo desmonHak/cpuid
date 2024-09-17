@@ -1,9 +1,26 @@
 #ifndef __CPUID_C__
 #define __CPUID_C__
 
-#include "cpuid.h"
+#undef _MSC_VER
 
+#include "cpuid.h"
+#ifdef _MSC_VER
+#define M_RDTSC_ASM(var1, var2) { \ // Código de ensamblador para MSVC(visual estudio)
+    __asm rdtsc \
+    __asm mov var1, eax \
+    __asm mov var2, edx \
+}
+#else
 #define M_RDTSC_ASM(var1, var2) __asm__ volatile ( "rdtsc" : "=a" (var1), "=d" (var2));
+#endif
+
+#ifdef DISABLE_FUNCS_EXTERNS
+#define printf(msg, ...)
+
+#else
+#define printf(msg, ...) printf_color(msg , ##__VA_ARGS__)
+#endif
+
 
 static inline uint64_t rdtsc() {
     /*
@@ -58,7 +75,11 @@ static inline uint64_t rdtsc() {
 // Función para esperar un tiempo (no precisa)
 void wait(int seconds) {
     for (int i = 0; i < seconds * 100000000; i++) {
+        #ifdef _MSC_VER
+        __asm { nop }
+        #else
         __asm__ volatile ("nop");
+        #endif
     }
 }
 
@@ -68,7 +89,30 @@ void wait(int seconds) {
  *  Los valores devuelto por get_flags pueden no ser completos por no estar en modo kernel
  * 
  */
-#ifdef __x86_64__
+#ifdef _MSC_VER
+#if defined(__x86_64__) || defined(_WIN64) || defined(_M_X64) || defined(_M_AMD64)
+uint64_t get_flags() {
+    unsigned __int64 flags;
+    __asm {
+        pushfq
+        pop flags
+    }
+
+    return flags;
+}
+#else
+uint32_t get_flags() {
+    unsigned long flags;
+    __asm {
+        pushfd
+        pop flags
+    }
+
+    return flags;
+}
+#endif
+#else
+#if defined(__x86_64__) || defined(_WIN64) || defined(_M_X64) || defined(_M_AMD64)
 uint64_t get_flags() {
     uint64_t flags;
 
@@ -97,6 +141,7 @@ uint32_t get_flags() {
     return flags;
 }
 #endif
+#endif
 
 
 int is_cpuid_supported() {
@@ -109,7 +154,34 @@ int is_cpuid_supported() {
      * el modo usuario. 
      * 
      */
-#ifdef __x86_64__
+#ifdef _MSC_VER
+#if defined(__x86_64__) || defined(_WIN64) || defined(_M_X64) || defined(_M_AMD64)
+    uint64_t flags1, flags2;
+    __asm {
+        pushfq
+        pop flags1
+        mov flags2, flags1
+        or flags1, 0x200000
+        push flags1
+        popfq
+        pushfq
+        pop flags2
+    }
+#else
+    uint32_t flags1, flags2;
+        __asm {
+            pushfd
+            pop flags1
+            mov flags2, flags1
+            or flags1, 0x200000
+            push flags1
+            popfd
+            pushfd
+            pop flags2
+        }
+#endif
+#else
+#if defined(__x86_64__) || defined(_WIN64) || defined(_M_X64) || defined(_M_AMD64)
     uint64_t flags1, flags2;
 
     __asm__ volatile (
@@ -142,6 +214,7 @@ int is_cpuid_supported() {
         : "cc"
     );
 #endif
+#endif
     return (flags1 >> 21); 
 }
 
@@ -167,11 +240,20 @@ void printBits(size_t const size, void const * const ptr)
 }
 
 void call_cpuid(uint32_t eax_in, uint32_t ecx_in, uint32_t *a, uint32_t *b, uint32_t *c, uint32_t *d) {
+    #ifdef _MSC_VER
+    uint32_t cpu_info[4];
+    __cpuidex(cpu_info, eax_in, ecx_in);
+    *a = cpu_info[0];
+    *b = cpu_info[1];
+    *c = cpu_info[2];
+    *d = cpu_info[3];
+    #else
     __asm__ volatile (
         "cpuid"
         : "=a" (*a), "=b" (*b), "=c" (*c), "=d" (*d)
         : "a" (eax_in), "c" (ecx_in)
     );
+    #endif
 }
 
 static inline uint8_t Get_Processor_Family_ID(Processor_Info_and_Feature_Bits *MyProcessor_Info_and_Feature_Bits){
