@@ -55,18 +55,19 @@ typedef enum cpuid_requests {
     CPUID_GETTLB,
     CPUID_GETSERIAL,                          // informacion de serie, se retiro en la mayoria de CPU's
                                               //  por seguridad
-    CPUID_CACHE_HIERARCHY_AND_TOPOLOGY_INTEL, // Jerarquía y topología de caché (para intel)
+
     /*
      * Estas dos hojas se utilizan para proporcionar información sobre los niveles de 
      * jerarquía de caché disponibles para el núcleo del procesador en el que se ejecuta 
      * la instrucción CPUID. La hoja 4 se usa en procesadores Intel y la hoja 8000001Dh se usa en procesadores AMD; 
      */
-    CPUID_INTEL_THREAD_CORE_AND_CACHE_TOPOLOGY1 = CPUID_CACHE_HIERARCHY_AND_TOPOLOGY_INTEL, // para procesadores intel
+    CPUID_CACHE_HIERARCHY_AND_TOPOLOGY_INTEL, // Jerarquía y topología de caché (para intel)
+
     // es te valor es el mismo que CPUID_CACHE_HIERARCHY_AND_TOPOLOGY_INTEL, pero para procesadores amd son distintos al ocupar 
     // la pagina CPUID_CACHE_HIERARCHY_AND_TOPOLOGY_AMD
+    CPUID_INTEL_THREAD_CORE_AND_CACHE_TOPOLOGY1 = CPUID_CACHE_HIERARCHY_AND_TOPOLOGY_INTEL, // para procesadores intel
+    
 
-    CPUID_MONITOR_MWAIT_FEATURES                = 0x05,
-    // Esto devuelve información de funciones relacionadas con las instrucciones MONITOR y MWAIT en los registros EAX, EBX, ECX y EDX.
     /* 
      * CPUID EAX=5: MONITOR/MWAIT feature information in EAX, EBX, EDX
      *  _________________________________________________________________________________________________________________________________________________
@@ -99,11 +100,13 @@ typedef enum cpuid_requests {
      * |______|___________________________________________________________________________________________________________________________________________|
      *              
      */
+    CPUID_MONITOR_MWAIT_FEATURES                = 0x05,
+    // Esto devuelve información de funciones relacionadas con las instrucciones MONITOR y MWAIT en los registros EAX, EBX, ECX y EDX.
+
     CPUID_THERMAL_AND_POWER_MANAGEMENT          = 0x6,
 
     CPUID_Extended_Features, // se espera recibir un valor en ECX que sea un valor del enum CPUID_Extended_Features_page
 
-    CPUID_INTEL_THREAD_CORE_AND_CACHE_TOPOLOGY2 = 0x0b,
     /*
      * A diferencia de la mayoría de las otras hojas de CPUID, la hoja Bh devolverá diferentes valores en EDX dependiendo del 
      * procesador lógico que ejecute la instrucción CPUID; el valor devuelto en EDX es en realidad la identificación x2APIC del 
@@ -156,8 +159,8 @@ typedef enum cpuid_requests {
      * en el espacio de identificación APIC, y algunos procesadores más nuevos violan esta suposición (comenzando con la serie Core i3 5x0), pero estos 
      * procesadores más nuevos también vienen con un x2APIC, por lo que su topología se puede determinar correctamente utilizando el método de hoja EAX=Bh.
      */
+    CPUID_INTEL_THREAD_CORE_AND_CACHE_TOPOLOGY2 = 0x0b,
 
-    CPUID_XSAVE_FEATURES_AND_STATE_COMPONENTS         = 0xD, // se espera recibir en ECX un valor enum CPUID_XSAVE_features_and_state_components_page
     /*
      *
      * Esta hoja se utiliza para enumerar características y componentes de estado de XSAVE.
@@ -180,7 +183,9 @@ typedef enum cpuid_requests {
      * ejecutando CPUID con EAX=0Dh y ECX configurado en el índice del componente estatal. Esto devolverá los siguientes elementos en EAX, EBX y ECX (con EDX reservado):
      * 
      */
-    CPUID_SGX_CAPATIBLES                        = 0x12, // se espera recibir en ECX un valor enum CPUID_SGX_capabilities_page
+    CPUID_XSAVE_FEATURES_AND_STATE_COMPONENTS         = 0xD, // se espera recibir en ECX un valor enum CPUID_XSAVE_features_and_state_components_page
+
+
     /*
      * Esta hoja proporciona información sobre las capacidades admitidas de la función Intel Software Guard Extensions (SGX). La hoja proporciona múltiples subhojas, 
      *  seleccionadas con ECX.
@@ -190,8 +195,9 @@ typedef enum cpuid_requests {
      * para controlar la información escrita en la región MISC de SSA (Área de estado de guardado SGX) cuando un AEX (SGX Se produce una salida asincrónica del enclave).
      * 
      */
+    CPUID_SGX_CAPATIBLES                        = 0x12, // se espera recibir en ECX un valor enum CPUID_SGX_capabilities_page
 
-    CPUID_PROCESSOR_TRACE                       = 0x14, // se espera recibir en ECX un valor enum CPUID_Processor_Trace_page
+
     /*
      *
      * Esta subhoja proporciona información sobre las funciones de Intel Processor Trace (también conocido como seguimiento de instrucciones en tiempo real).
@@ -199,8 +205,8 @@ typedef enum cpuid_requests {
      * El valor devuelto en EAX es el índice de la subhoja más alta admitida para CPUID con EAX=14h. EBX y ECX proporcionan indicadores de funciones, EDX está reservado.
      * 
      */
+    CPUID_PROCESSOR_TRACE                       = 0x14, // se espera recibir en ECX un valor enum CPUID_Processor_Trace_page
 
-    CPUID_TSC_AND_CORE_CRYSTAL_FREQUENCY_INFORMATION = 0X15,
     /*
      *
      * CPUID EAX=15h: información de frecuencia de TSC y Core Crystal EAX EBX ECX Relación entre la frecuencia del TSC y la frecuencia del reloj del cristal central, 
@@ -215,8 +221,9 @@ typedef enum cpuid_requests {
      *  |_______________________________________|________________________________________|_________________________________________________|        
      * 
      */
+    CPUID_TSC_AND_CORE_CRYSTAL_FREQUENCY_INFORMATION = 0X15,
 
-    CPUID_PROCESSOR_AND_BUS_SPECIFICATION_FREQUENCIES_INFORMATION = 0X16,
+
     /*
      *
      * CPUID EAX=16h: Frecuencias de especificación de procesador y bus[b]
@@ -237,8 +244,9 @@ typedef enum cpuid_requests {
      *  |_______|_______________________________________|________________________________________|_________________________________________________| 
      * 
      */
+    CPUID_PROCESSOR_AND_BUS_SPECIFICATION_FREQUENCIES_INFORMATION = 0X16,
 
-    CPUID_SOC_VENDOR_ATTRIBUTE_ENUMRATION       = 0x17,
+
     /*
      *
      * Esta hoja está presente en sistemas donde un núcleo IP de CPU x86 está implementado en un SoC (sistema en chip) de otro proveedor; mientras que 
@@ -246,11 +254,20 @@ typedef enum cpuid_requests {
      * de subhoja en ECX.
      * 
      */
+    CPUID_SOC_VENDOR_ATTRIBUTE_ENUMRATION       = 0x17,
 
-    CPUID_INTEL_KEY_LOCKER_FEATURES             = 0x19,
     // Esta hoja proporciona información sobre las funciones de Intel Key Locker en EAX, EBX y ECX. EDX está reservado.
+    CPUID_INTEL_KEY_LOCKER_FEATURES             = 0x19,
 
-    CPUID_RESERVED_FOR_TDX_ENUMERATION          = 0x21,
+    /*
+     *
+     * Tipo de nucleo que es: 
+     * CPUID 0000001A: 40000001-00000000-00000000-00000000 [Core]
+     * CPUID 0000001A: 20000001-00000000-00000000-00000000 [Atom]
+     * 
+     */
+    CPUID_TYPE_CORE                             = 0x1a,
+
     /*
      *
      * Cuando Intel TDX (Trust Domain Extensions) está activo, el módulo TDX interceptará los intentos de ejecutar la 
@@ -264,6 +281,8 @@ typedef enum cpuid_requests {
      * devolverá 0 en EAX/EBX/ECX/EDX cuando se ejecute directamente en la CPU.
      * 
      */
+    CPUID_RESERVED_FOR_TDX_ENUMERATION          = 0x21,
+
 
     CPUID_AVX10_FEATURES                        = 0x24, // se espera recibir en ECX un valor enum CPUID_AVX10_Features_page
     // Esto devuelve una subhoja máxima admitida en EAX y información de características AVX10 en EBX.[94] (ECX y EDX están reservados).
@@ -292,11 +311,13 @@ typedef enum cpuid_requests {
     // CPUID extendidos, comprobar con CPUID eax = 0 el valor max de entrada admitido. Si el valor retornado en EAX no es superior, no se puede realizar estos
     // llamados.
     CPUID_INTELEXTENDED                         = 0x80000000,
-    CPUID_INTELFEATURES,
-    CPUID_INTELBRANDSTRING,
-    CPUID_INTELBRANDSTRINGMORE,
-    CPUID_INTELBRANDSTRINGEND                   = 0x80000004,
-    CPUID_CACHE_HIERARCHY_AND_TOPOLOGY_AMD      = 0x8000000D // Jerarquía y topología de caché (para MAD)
+    CPUID_INTELFEATURES,                     // = 0x80000001,
+    CPUID_INTELBRANDSTRING,                  // = 0x80000002,    CPUID 80000002: 68743231-6E654720-746E4920-52286C65 [12th Gen Intel(R]
+    CPUID_INTELBRANDSTRINGMORE,              // = 0x80000003,    CPUID 80000003: 6F432029-54286572-6920294D-32312D37 [) Core(TM) i7-12]
+    CPUID_INTELBRANDSTRINGEND                   = 0x80000004, // CPUID 80000004: 48303037-00000000-00000000-00000000 [700H]
+    CPUID_INTEL_SIZE_CACHE_L1                   = 0x80000005, // CPUID 80000005: 00000000-00000000-00000000-00000000 [L1D: 0 KB / L1I: 0 KB]
+    CPUID_INTEL_SIZE_CACHE_L2_L3                = 0x80000006, // CPUID 80000006: 00000000-00000000-05007040-00000000 [L2: 1280 KB] / L3: 0 KB]
+    CPUID_CACHE_HIERARCHY_AND_TOPOLOGY_AMD      = 0x8000000D  // Jerarquía y topología de caché (para MAD)
 } cpuid_requests;
 
 typedef enum CPUID_Extended_Features_page { // se usa junto a CPUID_Extended_Features, donde este se pasa a EAX, y a ECX un CPUID_Extended_Features_page
@@ -336,6 +357,7 @@ typedef struct manufacturer_ID
     uint32_t ECX;
     uint8_t final_string; // \0
 } manufacturer_ID;
+
 
 typedef struct Processor_Info_and_Feature_Bits {
     uint32_t Stepping_ID        :4; // 3  - 0
@@ -426,21 +448,22 @@ typedef struct Additional_Information_Feature_Bits { // para CPUID con EAX=1; es
 } Additional_Information_Feature_Bits;
 
 
+```c
 typedef struct cpuid_feat_ecx {
     uint32_t SSE3       :1; // 00
     uint32_t PCLMUL     :1; // 01
     uint32_t DTES64     :1; // 02
     uint32_t MONITOR    :1; // 03
-    uint32_t DS_CPL     :1; // 04
-    uint32_t VMX        :1; // 05
+    uint32_t DS_CPL     :1; // 04 CPL-qualified debug store
+    uint32_t VMX        :1; // 05 VMX technology
     uint32_t SMX        :1; // 06
-    uint32_t EST        :1; // 07
-    uint32_t TM2        :1; // 08
+    uint32_t EST        :1; // 07 Enhanced SpeedStep technology
+    uint32_t TM2        :1; // 08 Thermal Monitor 2 supported
     uint32_t SSSE3      :1; // 09
-    uint32_t CID        :1; // 10
+    uint32_t CID        :1; // 10 L1 context ID supported
     uint32_t SDBG       :1; // 11
     uint32_t FMA        :1; // 12
-    uint32_t CX16       :1; // 13
+    uint32_t CX16       :1; // 13 CompareAndExchange16B supported
     uint32_t XTPR       :1; // 14
     uint32_t PDCM       :1; // 15
     uint32_t RESERVADO  :1; // 16
@@ -462,38 +485,38 @@ typedef struct cpuid_feat_ecx {
 } cpuid_feat_ecx;
 
 typedef struct cpuid_feat_edx {
-    uint32_t FPU        :1; // 00
-    uint32_t VME        :1; // 01
-    uint32_t DE         :1; // 02
-    uint32_t PSE        :1; // 03
-    uint32_t TSC        :1; // 04
-    uint32_t MSR        :1; // 05
-    uint32_t PAE        :1; // 06
-    uint32_t MCE        :1; // 07
-    uint32_t CX8        :1; // 08
-    uint32_t APIC       :1; // 09
-    uint32_t RESERVADO  :1; // 10
-    uint32_t SEP        :1; // 11
-    uint32_t MTRR       :1; // 12
-    uint32_t PGE        :1; // 13
-    uint32_t MCA        :1; // 14
-    uint32_t CMOV       :1; // 15
-    uint32_t PAT        :1; // 16
-    uint32_t PSE36      :1; // 17
-    uint32_t PSN        :1; // 18
-    uint32_t CLFLUSH    :1; // 19
-    uint32_t NX         :1; // 20
-    uint32_t DS         :1; // 21
-    uint32_t ACPI       :1; // 22
-    uint32_t MMX        :1; // 23
-    uint32_t FXSR       :1; // 24
-    uint32_t SSE        :1; // 25
-    uint32_t SSE2       :1; // 26
-    uint32_t SS         :1; // 27
-    uint32_t HTT        :1; // 28
-    uint32_t TM         :1; // 29
-    uint32_t IA64       :1; // 30
-    uint32_t PBE        :1; // 31
+    uint32_t FPU        :1; // 00 FPU87 on chip
+    uint32_t VME        :1; // 01 Virtual 8086 extensions
+    uint32_t DE         :1; // 02 Debugging extensions
+    uint32_t PSE        :1; // 03 Page Size extensions
+    uint32_t TSC        :1; // 04 TimeStamp Counter
+    uint32_t MSR        :1; // 05 RDMSR/WRMSR support
+    uint32_t PAE        :1; // 06 Physical Address Extension
+    uint32_t MCE        :1; // 07 Machine Check Exception
+    uint32_t CX8        :1; // 08 CMXCHG8B
+    uint32_t APIC       :1; // 09 APIC on-chip
+    uint32_t RESERVADO  :1; // 10 
+    uint32_t SEP        :1; // 11 SYSENTER/SYSEXIT
+    uint32_t MTRR       :1; // 12 Memory Type Range Registers
+    uint32_t PGE        :1; // 13 Global PTE bit
+    uint32_t MCA        :1; // 14 Machine Check Architecture
+    uint32_t CMOV       :1; // 15 CMOV: Conditional move/compare instruction
+    uint32_t PAT        :1; // 16 Page attribute table
+    uint32_t PSE36      :1; // 17 PSE36 Size extensions
+    uint32_t PSN        :1; // 18 Processor serial number
+    uint32_t CLFLUSH    :1; // 19 CFLUSH instruction
+    uint32_t NX         :1; // 20 Bit NX
+    uint32_t DS         :1; // 21 Debug Store
+    uint32_t ACPI       :1; // 22 ACPI
+    uint32_t MMX        :1; // 23 MMX
+    uint32_t FXSR       :1; // 24 FXSAVE/FXRESTORE
+    uint32_t SSE        :1; // 25 SSE extensions
+    uint32_t SSE2       :1; // 26 SSE2 extensions
+    uint32_t SS         :1; // 27 Self-Snoop
+    uint32_t HTT        :1; // 28 Hyperthreading
+    uint32_t TM         :1; // 29 Thermal Monitor
+    uint32_t IA64       :1; // 30 
+    uint32_t PBE        :1; // 31 Pending Break Enable
 } cpuid_feat_edx;
 
 #pragma pack(pop)
@@ -553,7 +576,6 @@ typedef enum Processor_Family_ID_Intel {
 
     // Se ha informado que el ID de familia 8h se ha evitado deliberadamente para 
     // la familia de procesadores Pentium 4 debido a la incompatibilidad con Windows NT 4.0
-
     Xeon_Phi_KnightsCorner = 0x0B,        // https://es.wikipedia.org/wiki/Intel_MIC
     Pentium_4_NetBurst     = 0x0F,
     Itanium_2              = 0x11,        // en modo IA-32
@@ -567,8 +589,11 @@ typedef enum Processor_Family_ID_Intel {
 #define Processor_Type_value_reserved 0b11 
 
 
-// https://wiki.osdev.org/CPUID
-// Vendor strings from CPUs.
+/* 
+ * https://wiki.osdev.org/CPUID
+ * Vendor strings from CPUs.
+ * Pagina 0x0?
+ */
 #define CPUID_VENDOR_AMD                   "AuthenticAMD"
 #define CPUID_VENDOR_AMD_OLD               "AMDisbetter!" // Early engineering samples of AMD K5 processor
 #define CPUID_VENDOR_INTEL                 "GenuineIntel"

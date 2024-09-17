@@ -4,7 +4,6 @@
 
 int main() {
 
-
     size_t val = get_flags();
     printf("flags                 0x%x = ", val);
     printBits(sizeof(size_t), &val);

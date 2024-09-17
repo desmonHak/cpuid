@@ -329,5 +329,20 @@ void printProcessor_Info_and_Feature_Bits(uint32_t eax) {
     );
 }
 
+/*
+printf("MMX - %s\n", cpuid.EDX() & (1 << 23) ? "yes" : "no");
+printf("SSE - %s\n", cpuid.EDX() & (1 << 25) ? "yes" : "no"); 
+printf("SSE2 - %s\n", cpuid.EDX() & (1 << 26) ? "yes" : "no"); 
+printf("SSE3 - %s\n", cpuid.ECX() & (1 << 0) ? "yes" : "no"); 
+printf("SSSE3 - %s\n", cpuid.ECX() & (1 << 9) ? "yes" : "no"); 
+printf("SSE4.1 - %s\n", cpuid.ECX() & (1 << 19) ? "yes" : "no"); 
+printf("SSE4.2 - %s\n", cpuid.ECX() & (1 << 20) ? "yes" : "no"); 
+printf("AES - %s\n", cpuid.ECX() & (1 << 25) ? "yes" : "no"); 
+printf("AVX - %s\n", cpuid.ECX() & (1 << 28) ? "yes" : "no"); 
+printf("HT - %s\n", cpuid.EDX() & (1 << 28) ? "yes" : "no"); 
+printf("IA64 (emulating x86) - %s\n", cpuid.EDX() & (1 << 30) ? "yes" : "no"); 
+printf("Hypervisor? - %s\n", cpuid.ECX() & (1 << 31) ? "yes" : "no"); 
+printf("popcnt - %s\n", cpuid.ECX() & (1 << 23) ? "yes" : "no");
+*/
 
 #endif
