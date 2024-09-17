@@ -3,3 +3,6 @@ cpuid_apple.*
 *.txt
 cpuid_dump*
 pruebas*
+cpuid_native.egg-info
+build
+dist
