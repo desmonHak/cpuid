@@ -77,7 +77,7 @@ static void Method_Cpuid_Class(init_type_object)(void) {
         .tp_iternext        = 0,                                     /* tp_iternext */
         .tp_methods         = Method_Cpuid_Class(methods),                         /* tp_methods */
         .tp_members         = 0,                                     /* tp_members */
-        .tp_getset          = 0,                                     /* tp_getset 
+        .tp_getset          = Method_Cpuid_Class(getsetters),        /* tp_getset 
                                                                       * Metodos getter y setter para los atributos de 
                                                                       * la clase.
                                                                       */
@@ -99,6 +99,31 @@ static void Method_Cpuid_Class(init_type_object)(void) {
     // Finalmente, llamamos a PyType_Ready
     if (PyType_Ready(&Method_Cpuid_Class(type_Class)) < 0)
         return;
+}
+
+static PyObject* Method_Cpuid_Class(get_reg)(Cpuid *self, void *closure) {
+    if (self->reg == NULL) {
+        Py_RETURN_NONE;
+    }
+    Py_INCREF(self->reg);
+    return (PyObject *)self->reg;
+}
+static int       Method_Cpuid_Class(set_reg)(Cpuid *self, PyObject *value, void *closure){
+    if (value == NULL) {
+        PyErr_SetString(PyExc_TypeError, "No se puede eliminar el atributo reg");
+        return -1;
+    }
+
+    // verificar si el objeto value es una instancia de una clase Register
+    if (PyObject_IsInstance(value, (PyObject *)&Method_Register_Class(type_Class))) {
+        Py_XDECREF(self->reg);  // Decrementa la referencia al objeto anterior, si existe
+        Py_INCREF(value);       // Incrementa la referencia al nuevo objeto
+        self->reg = (Register *)value;
+    } else {
+        PyErr_SetString(PyExc_ValueError, "Mo es una instancia de Register");
+        return -1;
+    }
+    return 0;
 }
 
 // Método __init__

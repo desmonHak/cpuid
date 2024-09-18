@@ -130,13 +130,27 @@ static PyObject* Method_Cpuid_Class(repr)             (Cpuid *self);
 static int       Method_Cpuid_Class(traverse)         (Cpuid *self, visitproc visit, void *arg);
 static int       Method_Cpuid_Class(clear)            (Cpuid *self);
 
+// metodos getter y setter
+static PyObject* Method_Cpuid_Class(get_reg)(Cpuid *self, void *closure);
+static int       Method_Cpuid_Class(set_reg)(Cpuid *self, PyObject *value, void *closure);
+
 // Metodos propios
-static PyObject* Method_Cpuid_Class(cpuid)              (Cpuid *self, PyObject *args);
+static PyObject* Method_Cpuid_Class(cpuid)     (Cpuid *self, PyObject *args);
+
 
 // Definimos los métodos de la clase
 static PyMethodDef Method_Cpuid_Class(methods)[] = {
     {"cpuid", (PyCFunction)Method_Cpuid_Class(cpuid), METH_VARARGS, "Suma un número al valor actual"},
     {NULL}  // Indicador de fin de la lista de métodos
+};
+
+// atributos de la clase:
+static PyGetSetDef Method_Cpuid_Class(getsetters)[] = {
+    {
+        "reg", (getter)Method_Cpuid_Class(get_reg),
+        (setter)Method_Cpuid_Class(set_reg), "Objeto Registro interno de la clase cpuid", NULL
+    },
+    {NULL}  // Sentinel
 };
 
 #include "Cpuid.c"

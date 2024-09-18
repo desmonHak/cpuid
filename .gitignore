@@ -6,3 +6,4 @@ pruebas*
 cpuid_native.egg-info
 build
 dist
+*.pyc
