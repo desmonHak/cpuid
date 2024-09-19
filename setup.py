@@ -26,11 +26,11 @@ def main():
             )
         ],
         classifiers=[
-        'Development Status :: 3 - Alpha',
-        'License :: OSI Approved :: None',
-        'Natural Language :: Spanish',
-        'Programming Language :: Python :: 3 :: Only',
-        'Programming Language :: Python :: Implementation :: CPython',
+            'Development Status :: 3 - Alpha',
+            'License :: OSI Approved :: None',
+            'Natural Language :: Spanish',
+            'Programming Language :: Python :: 3 :: Only',
+            'Programming Language :: Python :: Implementation :: CPython',
         ]
     )
 

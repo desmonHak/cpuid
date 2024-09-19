@@ -4,6 +4,7 @@ cpuid_apple.*
 cpuid_dump*
 pruebas*
 cpuid_native.egg-info
-build
+bdist.win-amd64
+temp.win-amd64-cpython-311
 dist
 *.pyc
