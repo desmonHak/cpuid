@@ -1,19 +1,44 @@
 from cpuid_x86 import Cpuid, Register, CPUID_GETFEATURES
 from typing import Optional, List, Tuple
 
-""" 
-typedef struct Processor_Info_and_Feature_Bits {
-    uint32_t Stepping_ID        :4; // 3  - 0
-    uint32_t Model              :4; // 7  - 4
-    uint32_t Family_ID          :4; // 11 - 8
-    uint32_t Processor_Type     :2; // 13 - 12
-    uint32_t Reserved2          :2; // 15 - 14
-    uint32_t Extended_Model_ID  :4; // 19 - 16
-    uint32_t Extended_Family_ID :8; // 27 - 20
-    uint32_t Reserved1          :4; // 31 - 28
-} Processor_Info_and_Feature_Bits;
-"""
 class Processor_Info_and_Feature_Bits():
+    """ 
+    >>> import cpu_id_x86
+    >>> a = cpu_id_x86.Processor_Info_and_Feature_Bits()
+    >>> dir(a)
+    [
+        di'All_Model', 'CPUID_signature', 'Extended_Family_ID', 'Extended_Model_ID', 
+        'Family_ID', 'Model', 'Processor_Type', 'Reserved1', 'Reserved2', 'Stepping_ID',
+        '__class__', '__delattr__', '__dict__', '__dir__', '__doc__', '__eq__', '__format__', 
+        '__ge__', '__getattribute__', '__getstate__', '__gt__', '__hash__', '__init__', 
+        '__init_subclass__', '__le__', '__lt__', '__module__', '__ne__', '__new__', 
+        '__reduce__', '__reduce_ex__', '__repr__', '__setattr__', '__sizeof__', '__str__', 
+        '__subclasshook__', '__weakref__', 'additional_info', 'extensions', 
+        'get_model_number', 'print_vals'
+    ]
+    >>> print(a.extensions)
+    CPU Features: FPU, VME, DE, PSE, TSC, MSR, MCE, CX8, APIC, RESERVADO, SEP, MTRR, PGE, 
+    MCA, CMOV, PSE36, CLFLUSH, NX, DS, ACPI, MMX, FXSR, SSE, SSE2, SS, HTT, TM, IA64, SSE3, 
+    PCLMUL, DTES64, MONITOR, DS_CPL, VMX, SMX, EST, TM2, SSSE3, SDBG, FMA, CX16, XTPR, PDCM,
+    RESERVADO, PCID, SSE4_1, X2APIC, MOVBE, POPCNT, TSC, AES, XSAVE, OSXSAVE, AVX, F16C, HYPERVISOR
+    >>> help(a.additional_info)
+    >>> print(a.additional_info)
+    Brand Index: 0
+    CLFLUSH Line Size: 64 bytes
+    Max Addressable IDs: 128
+    Local APIC ID: 68
+
+    typedef struct Processor_Info_and_Feature_Bits {
+        uint32_t Stepping_ID        :4; // 3  - 0
+        uint32_t Model              :4; // 7  - 4
+        uint32_t Family_ID          :4; // 11 - 8
+        uint32_t Processor_Type     :2; // 13 - 12
+        uint32_t Reserved2          :2; // 15 - 14
+        uint32_t Extended_Model_ID  :4; // 19 - 16
+        uint32_t Extended_Family_ID :8; // 27 - 20
+        uint32_t Reserved1          :4; // 31 - 28
+    } Processor_Info_and_Feature_Bits;
+    """
     def __init__(self, eax:Optional[int] = None):
         """
             Obtiene la informacion de la cpu y la guarda en la clase.
@@ -56,6 +81,9 @@ class Processor_Info_and_Feature_Bits():
         self.CPUID_signature    :int = (self.Family_ID << 8) + \
                                        (self.Model     << 4) + \
                                        (self.Stepping_ID)
+        
+        self.additional_info = Additional_Information_Feature_Bits(my_request_cpuid.reg.ebx)
+        self.extensions      = Information_Feature_Bits(ecx=my_request_cpuid.reg.ecx, edx=my_request_cpuid.reg.edx)
         
     def get_model_number(
             self, 
@@ -205,8 +233,8 @@ class Information_Feature_Bits():
                 
     def __init__(
             self, 
-            edx:Optional[int] = None, 
-            ecx:Optional[int] = None
+            ecx:Optional[int] = None,
+            edx:Optional[int] = None
         ):
         """
             Se usa para obtener informacion acerca de las tecnologias que la CPU
@@ -388,3 +416,114 @@ class Information_Feature_Bits():
                 print(f"{feature:<10}: {'Soportado' if value else 'No soportado'}")
 
 
+class Additional_Information_Feature_Bits:
+    """
+    >>> a = cpu_id_x86.Processor_Info_and_Feature_Bits()
+    >>> print(a.additional_info)
+    Brand Index: 0
+    CLFLUSH Line Size: 64 bytes
+    Max Addressable IDs: 128
+    Local APIC ID: 24
+    >>> a.additional_info.CLFLUSH_Line_Size
+    64
+    
+    typedef struct Additional_Information_Feature_Bits { // para CPUID con EAX=1; esta estructura esta en EBX
+        uint32_t Brand_Index        :8; /* 7  - 0   Descripción: El Brand Index es un identificador único del modelo del procesador.
+                                         *          Validez: Siempre válido.
+                                         *          Uso: Se utiliza para identificar y diferenciar entre modelos de procesadores de una misma familia.
+                                         */
+        uint32_t CLFLUSH            :8; /* 15 - 8   tamaño de línea (Valor * 8 = tamaño de línea de caché en bytes)
+                                         *          Descripción: Tamaño de la línea de caché para la instrucción CLFLUSH.
+                                         *          Validez: Este campo es válido si el bit 19 de CPUID.01.EDX (CLFSH) está establecido en 1.
+                                         *          Cálculo: El valor en estos bits multiplicado por 8 da el tamaño de la línea de caché en bytes.
+                                         */
+        uint32_t Max_ID_addressable :8; /* 23 - 16  Número máximo de ID direccionables para procesadores lógicos en este paquete físico;
+                                         *          El entero de potencia de 2 más cercano que no sea menor que este valor es el número 
+                                         *          de ID de APIC iniciales únicos reservados para direccionar diferentes procesadores lógicos en un paquete físico.
+                                         *          Uso anterior: Número de procesadores lógicos por procesador físico; dos para el 
+                                         *          procesador Pentium 4 con tecnología Hyper-Threading.
+                                         *          En CPU con más de 128 procesadores lógicos en un solo paquete (por ejemplo, 
+                                         *          Intel Xeon Phi 7290[41] y AMD Threadripper Pro 7995WX[42]), el valor en el bit 23:16 se 
+                                         *          establece en un valor sin potencia de 2.
+                                         *          
+                                         *          Descripcion:
+                                         *          Concepto Básico;
+                                         *          Los procesadores modernos pueden ejecutar múltiples hilos de ejecución al mismo tiempo. 
+                                         *          Esto es posible gracias a tecnologías como el Hyper-Threading de Intel, donde un solo procesador 
+                                         *          físico puede actuar como si fuera varios procesadores lógicos. Cada uno de estos procesadores lógicos 
+                                         *          puede ejecutar su propio hilo de ejecución.
+                                         *          Número Máximo de IDs Direccionables para Procesadores Lógicos
+                                         *          Imagina que tienes una fábrica con varias líneas de producción. Cada línea de producción puede trabajar en 
+                                         *          una tarea diferente al mismo tiempo. En nuestro ejemplo, cada línea de producción es como un procesador lógico
+                                         *          dentro de un procesador físico.
+                                         *          El "Número máximo de IDs direccionables para procesadores lógicos" es como el número máximo de líneas de 
+                                         *          producción que puede tener tu fábrica. Este número indica cuántos procesadores lógicos diferentes puede 
+                                         *          gestionar tu procesador físico.
+                                         *          El "Número máximo de IDs direccionables para procesadores lógicos" es como el número máximo de líneas de 
+                                         *          producción que puede tener tu fábrica. Este número indica cuántos procesadores lógicos diferentes puede 
+                                         *          gestionar tu procesador físico.
+                                         *          Por Qué es Importante?
+                                         *          Identificación Única:
+                                         *          Cada procesador lógico necesita una identificación única para que el sistema operativo y las aplicaciones 
+                                         *          puedan comunicarse con él de manera efectiva. Es como tener un número de identificación único para cada línea de producción.
+                                         *          Optimización del Rendimiento:
+                                         *          Sabiendo cuántos procesadores lógicos puede manejar el procesador físico, el sistema operativo puede optimizar cómo 
+                                         *          distribuir las tareas entre ellos. Es similar a asignar diferentes tareas a cada línea de producción para aprovechar 
+                                         *          al máximo la capacidad de la fábrica.
+                                         *          Configuración del Sistema:
+                                         *          Esta información ayuda a configurar correctamente el sistema, especialmente en entornos de servidores o estaciones de 
+                                         *          trabajo donde es crucial aprovechar al máximo los recursos del hardware.
+                                         *          Ejemplo Simplificado
+                                         *          Supongamos que tienes un procesador físico que, gracias a Hyper-Threading, puede manejar hasta 8 procesadores lógicos. 
+                                         *          Esto significa que el sistema operativo puede ver y utilizar hasta 8 procesadores como si fueran independientes, aunque 
+                                         *          físicamente solo haya uno.
+                                         *          Procesador Físico: 1
+                                         *          Procesadores Lógicos: 8
+                                         *          Número máximo de IDs direccionables: 8
+                                         *          Este número máximo (8 en nuestro ejemplo) es crucial para entender cuántos hilos de ejecución puedes correr 
+                                         *          simultáneamente en tu sistema.
+                                         *          En Resumen
+                                         *          El "Número máximo de IDs direccionables para procesadores lógicos" es un valor que indica cuántos procesadores 
+                                         *          lógicos puede manejar un procesador físico. Esto permite que el sistema operativo y las aplicaciones optimicen el uso del 
+                                         *          hardware, asegurando que las tareas se distribuyan eficientemente entre los distintos procesadores lógicos disponibles
+                                         */
+
+
+        uint32_t Local_APIC_ID      :8; /*  
+                                         * El ID de APIC local también se puede identificar a través de la hoja cpuid 0Bh 
+                                         *  ( CPUID.0Bh.EDX[x2APIC-ID] ). En CPU con más de 256 procesadores lógicos en un paquete 
+                                         *  (por ejemplo, Xeon Phi 7290), se debe utilizar la hoja 0Bh porque el ID APIC no cabe en 8 bits.
+                                         *  Descripción: ID APIC local del procesador lógico que está ejecutando la instrucción. APIC 
+                                         *  (Advanced Programmable Interrupt Controller) es un componente que maneja interrupciones en sistemas multiprocesador
+                                         *  El "Local APIC ID" es importante porque permite identificar de forma única cada procesador lógico. En sistemas con 
+                                         *  múltiples procesadores, puede haber conflictos o problemas si dos procesadores tienen el mismo identificador de APIC local.
+                                         *  El "Local APIC ID" se utiliza en el manejo de interrupciones y en la coordinación de tareas entre los diferentes 
+                                         *  procesadores en un sistema multiprocesador. Cada procesador utiliza su identificador de APIC local para comunicarse 
+                                         *  con el APIC local y coordinar las interrupciones y otras actividades del sistema.
+                                         *  Validez: Válido para procesadores Pentium 4 y posteriores.
+                                         * Uso: El APIC-ID inicial se utiliza para identificar el procesador lógico en ejecución.
+                                         * resumen: es un identificador único asignado a cada procesador lógico en un sistema multiprocesador 
+                                         * y se utiliza para coordinar las actividades del sistema
+                                         */
+                                    
+    } Additional_Information_Feature_Bits;
+    """
+    def __init__(self, ebx:Optional[int] = None):
+        
+        if ebx == None:
+            my_request_cpuid = Cpuid(Register(
+                CPUID_GETFEATURES,
+                0, 0, 0
+            ))
+            ebx = my_request_cpuid.reg.ebx
+            
+        self.Brand_Index = ebx & 0xFF
+        self.CLFLUSH_Line_Size = ((ebx >> 8) & 0xFF) * 8
+        self.Max_Addressable_IDs = (ebx >> 16) & 0xFF
+        self.Local_APIC_ID = (ebx >> 24) & 0xFF
+
+    def __str__(self):
+        return (f"Brand Index: {self.Brand_Index}\n"
+                f"CLFLUSH Line Size: {self.CLFLUSH_Line_Size} bytes\n"
+                f"Max Addressable IDs: {self.Max_Addressable_IDs}\n"
+                f"Local APIC ID: {self.Local_APIC_ID}")
