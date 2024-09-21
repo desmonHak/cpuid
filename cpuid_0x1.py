@@ -511,16 +511,17 @@ class Additional_Information_Feature_Bits:
     def __init__(self, ebx:Optional[int] = None):
         
         if ebx == None:
+            # para amd a de llamarse a 0x80000008
             my_request_cpuid = Cpuid(Register(
                 CPUID_GETFEATURES,
                 0, 0, 0
             ))
             ebx = my_request_cpuid.reg.ebx
             
-        self.Brand_Index = ebx & 0xFF
-        self.CLFLUSH_Line_Size = ((ebx >> 8) & 0xFF) * 8
-        self.Max_Addressable_IDs = (ebx >> 16) & 0xFF
-        self.Local_APIC_ID = (ebx >> 24) & 0xFF
+        self.Brand_Index         = ebx & 0xFF
+        self.CLFLUSH_Line_Size   = ((ebx >> 8) & 0xFF) * 8
+        self.Max_Addressable_IDs = (ebx >> 16) & 0xFF # cantidad de procasadores logicos
+        self.Local_APIC_ID       = (ebx >> 24) & 0xFF
 
     def __str__(self):
         return (f"Brand Index: {self.Brand_Index}\n"

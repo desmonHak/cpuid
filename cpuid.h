@@ -8,6 +8,8 @@
 #include <stdio.h>
 #include <stdint.h>
 
+#include "colors.h"
+
 #ifndef __GNUC__
 #define __asm__ asm
 #define volatile 

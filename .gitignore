@@ -2,7 +2,6 @@
 cpuid_apple.*
 *.txt
 cpuid_dump*
-pruebas*
 cpuid_native.egg-info
 bdist.win-amd64
 temp.win-amd64-cpython-311
