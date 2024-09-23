@@ -113,12 +113,29 @@ typedef struct {
     uint8_t core_id;
     uint8_t local_apic_id;
     TopologyInfo levels[MAX_LEVELS];
+
+    /*
+     *
+     * Tipo de nucleo que es: 
+     * CPUID 0000001A: 40000001-00000000-00000000-00000000 [Core]
+     * CPUID 0000001A: 20000001-00000000-00000000-00000000 [Atom]
+     * 
+     * >>> (0x40000001 >> 30)
+     * 1
+     * >>> (0x20000001 >> 30)
+     * 0
+     * >>>
+     * 
+     */
+    uint8_t core_type;
 } CoreTopology;
 
 CoreTopology core_topologies[MAX_CORES] = {0};
 
 uint8_t Locals_APICs[24] = {0};
 uint8_t Core_actual = 0;
+
+uint32_t eax, ebx, ecx, edx;
 
 void analyze_topology2(uint8_t core_id) {
     uint32_t eax, ebx, ecx, edx;
@@ -137,7 +154,12 @@ void analyze_topology2(uint8_t core_id) {
         level_count++;
     }
 
-    core_topologies[core_id].core_id = core_id;
+    call_cpuid(0x1a, 0, &eax, &ebx, &ecx, &edx);
+    core_topologies[core_id].core_type     = (eax >> 30);
+    printf("EAX = 0x%08x EBX = 0x%08x ECX = 0x%08x EDX = 0x%08x\n", eax, ebx, ecx, edx);
+    printf("%x\n", core_topologies[core_id].core_type);
+
+    core_topologies[core_id].core_id       = core_id;
     core_topologies[core_id].local_apic_id = Locals_APICs[core_id];
 }
 
@@ -146,7 +168,7 @@ void print_topology_summary() {
     for (int i = 0; i < MAX_CORES; i++) {
         if (core_topologies[i].core_id == 0 && i != 0) break;
 
-        printf("Core %d (Local APIC ID: %d):\n", core_topologies[i].core_id, core_topologies[i].local_apic_id);
+        printf_color("Core #{FG:lpurple}%d#{FG:reset} (Local APIC ID: #{FG:lgreen}%d#{FG:reset}):\n", core_topologies[i].core_id, core_topologies[i].local_apic_id);
         for (int j = 0; j < MAX_LEVELS; j++) {
             TopologyInfo* info = &core_topologies[i].levels[j];
             if (info->level == 0 && j != 0) break;
@@ -156,16 +178,65 @@ void print_topology_summary() {
             int shift = info->eax & 0x1F;
             int x2apic_id = info->edx;
 
-            printf("  Nivel %02d: Tipo %02d, HilosPorNucleo(CoresLogicos) %02d, Shift %02d, x2APIC ID %02d\n",
-                   info->level, type, processors, shift, x2apic_id);
+            printf_color("  Nivel %02d: Tipo %02d, HilosPorNucleo(CoresLogicos) #{FG:lblue}%02d#{FG:reset}, Shift %02d, x2APIC ID #{FG:lgreen}%02d#{FG:reset}, core de tipo #{FG:yellow}%s#{FG:reset}\n",
+                   info->level, type, processors, shift, x2apic_id, (core_topologies[i].core_type == 0)? "Atom":"Core");
         }
-        printf("\n");
     }
 }
 
 
+void print_P_and_S_cores() {
+    /*
+     * En los P core el x2APIC ID del core 2 es el x2APIC ID del core 1, sumado 1(suposicion).
+     * Los Pcore, son de tipo Core y los Score core son de tipo Atom(suposicion).
+     * Core 0 (Local APIC ID: 0):
+     *   Nivel 00: Tipo 01, HilosPorNucleo(CoresLogicos) 02, Shift 01, x2APIC ID 00, core de tipo Core
+     *   Nivel 01: Tipo 02, HilosPorNucleo(CoresLogicos) 24, Shift 07, x2APIC ID 00, core de tipo Core
+     * Core 1 (Local APIC ID: 1):
+     *   Nivel 00: Tipo 01, HilosPorNucleo(CoresLogicos) 02, Shift 01, x2APIC ID 01, core de tipo Core
+     *   Nivel 01: Tipo 02, HilosPorNucleo(CoresLogicos) 24, Shift 07, x2APIC ID 01, core de tipo Core
+     */
+    printf("\nTopology Summary:\n");
+
+    uint8_t cores_fisicos = 0;
+    uint8_t cores_logicos = 0;
+    for (int cores_logicos = 0; cores_logicos < MAX_CORES; cores_logicos++, cores_fisicos++) {
+        switch (core_topologies[cores_logicos].core_type)
+        {
+        case 0: // "Atom" == S Core
+            printf_color("SCore con x2APIC ID's #{FG:lblue}%02d#{FG:reset}\n",
+                core_topologies[cores_logicos].local_apic_id
+                );
+            break;
+        case 1: // "Core"
+            // si el siguiente core tambien es de tipo "Core", 
+            // podemos garantizar que se trata de un Pcore
+            if (
+                core_topologies[cores_logicos+1].core_type == 1 && 
+                core_topologies[cores_logicos+1].local_apic_id == core_topologies[cores_logicos].local_apic_id + 1
+            ) {
+                printf_color("PCore con x2APIC ID's #{FG:lblue}%02d#{FG:reset} y #{FG:lblue}%02d#{FG:reset}\n",
+                core_topologies[cores_logicos+1].local_apic_id, core_topologies[cores_logicos].local_apic_id
+                );
+                cores_logicos++;
+            }
+            break;
+        default:
+            puts("Error este type core no existe");
+            exit(-1);
+        }
+    }
+    printf_color("Existe una cantidad de #{FG:lpurple}%02d#{FG:reset} Cores fisicos\n",
+                cores_fisicos);
+    if (cores_fisicos == cores_logicos) printf_color("El Hyper-Threading #{FG:lred}no" \
+            "#{FG:reset} se admite#{FG:reset} Cores fisicos\n",
+                cores_fisicos);
+    else printf_color("El Hyper-Threading #{FG:lgreen}si" \
+            "#{FG:reset} se admite#{FG:reset}\n",
+                cores_fisicos);
+}
+
 void analyze_topology() {
-    uint32_t eax, ebx, ecx, edx;
     TopologyLevel levels[3] = {0};
     int level_count = 0;
 
@@ -303,5 +374,6 @@ int main() {
         printf("\nCore %02hhu, Local APIC %02hhu\n", i, Locals_APICs[i]);
     }
     print_topology_summary();
+    print_P_and_S_cores();
     return 0;
 }
