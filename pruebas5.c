@@ -200,7 +200,7 @@ void print_P_and_S_cores() {
 
     uint8_t cores_fisicos = 0;
     uint8_t cores_logicos = 0;
-    for (int cores_logicos = 0; cores_logicos < MAX_CORES; cores_logicos++, cores_fisicos++) {
+    for (; cores_logicos < MAX_CORES; cores_logicos++, cores_fisicos++) {
         switch (core_topologies[cores_logicos].core_type)
         {
         case 0: // "Atom" == S Core
