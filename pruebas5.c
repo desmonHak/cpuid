@@ -98,7 +98,7 @@ typedef struct {
     int x2apic_id;
 } TopologyLevel;
 
-#define MAX_CORES 24
+#define MAX_CORES 12
 #define MAX_LEVELS 3
 
 typedef struct {
@@ -132,7 +132,7 @@ typedef struct {
 
 CoreTopology core_topologies[MAX_CORES] = {0};
 
-uint8_t Locals_APICs[24] = {0};
+uint8_t Locals_APICs[16] = {0};
 uint8_t Core_actual = 0;
 
 uint32_t eax, ebx, ecx, edx;
@@ -188,13 +188,53 @@ void print_topology_summary() {
 void print_P_and_S_cores() {
     /*
      * En los P core el x2APIC ID del core 2 es el x2APIC ID del core 1, sumado 1(suposicion).
-     * Los Pcore, son de tipo Core y los Score core son de tipo Atom(suposicion).
+     * ¿Los Pcore y los Score core pueden der de tipo Atom unicamenmte?.
      * Core 0 (Local APIC ID: 0):
      *   Nivel 00: Tipo 01, HilosPorNucleo(CoresLogicos) 02, Shift 01, x2APIC ID 00, core de tipo Core
      *   Nivel 01: Tipo 02, HilosPorNucleo(CoresLogicos) 24, Shift 07, x2APIC ID 00, core de tipo Core
      * Core 1 (Local APIC ID: 1):
      *   Nivel 00: Tipo 01, HilosPorNucleo(CoresLogicos) 02, Shift 01, x2APIC ID 01, core de tipo Core
      *   Nivel 01: Tipo 02, HilosPorNucleo(CoresLogicos) 24, Shift 07, x2APIC ID 01, core de tipo Core
+     * 
+     * 12th Gen Intel(R) Core(TM) i5-12500, 6Pcores = 12cores logicos, aqui se identificaron los Pcore como
+     * de tipo Atom.
+     * Core 0 (Local APIC ID: 0):
+     *   Nivel 00: Tipo 01, HilosPorNucleo(CoresLogicos) 02, Shift 01, x2APIC ID 00, core de tipo Atom
+     *   Nivel 01: Tipo 02, HilosPorNucleo(CoresLogicos) 12, Shift 04, x2APIC ID 00, core de tipo Atom
+     * Core 1 (Local APIC ID: 1):
+     *   Nivel 00: Tipo 01, HilosPorNucleo(CoresLogicos) 02, Shift 01, x2APIC ID 01, core de tipo Atom
+     *   Nivel 01: Tipo 02, HilosPorNucleo(CoresLogicos) 12, Shift 04, x2APIC ID 01, core de tipo Atom
+     * Core 2 (Local APIC ID: 2):
+     *   Nivel 00: Tipo 01, HilosPorNucleo(CoresLogicos) 02, Shift 01, x2APIC ID 02, core de tipo Atom
+     *   Nivel 01: Tipo 02, HilosPorNucleo(CoresLogicos) 12, Shift 04, x2APIC ID 02, core de tipo Atom
+     * Core 3 (Local APIC ID: 3):
+     *   Nivel 00: Tipo 01, HilosPorNucleo(CoresLogicos) 02, Shift 01, x2APIC ID 03, core de tipo Atom
+     *   Nivel 01: Tipo 02, HilosPorNucleo(CoresLogicos) 12, Shift 04, x2APIC ID 03, core de tipo Atom
+     * 
+     * 
+     * Los PCore han de identificarse posiblemente por el "HilosPorNucleo(CoresLogicos)", si son 2, podemos 
+     * predecir que se trata de un PCore, en caso contrario, si es 1, podemos deducir que se trata de un SCore.
+     * 
+     * SI "Core(s)" * "HilosPorNucleo(CoresLogicos" == "Total Logical Processors"(son 12Core logicos): 
+     * THEN
+     *      El hyper-threarding esta habilitado.
+     * ELSE:
+     *     El hyper-threarding no esta habilitado.
+     * FIN SI
+     * 
+     * "Total Logical Processors" = "Core(s)" * "HilosPorNucleo(CoresLogicos"
+     * 
+     * 
+     * Nivel 0: Tipo 1, HilosPorNucleo(CoresLogicos) 2, Shift 1, x2APIC ID 9
+     * Nivel 1: Tipo 2, HilosPorNucleo(CoresLogicos) 12, Shift 4, x2APIC ID 9
+     * Topology: 1 Package(s), 6 Core(s) per Package, 2 Thread(s) per Core
+     * Total Logical Processors: 12
+     * 
+     * Nivel 0: Tipo 1, HilosPorNucleo(CoresLogicos) 2, Shift 1, x2APIC ID 10
+     * Nivel 1: Tipo 2, HilosPorNucleo(CoresLogicos) 12, Shift 4, x2APIC ID 10
+     * Topology: 1 Package(s), 6 Core(s) per Package, 2 Thread(s) per Core
+     * Total Logical Processors: 12
+     * 
      */
     printf("\nTopology Summary:\n");
 
@@ -226,14 +266,18 @@ void print_P_and_S_cores() {
             exit(-1);
         }
     }
-    printf_color("Existe una cantidad de #{FG:lpurple}%02d#{FG:reset} Cores fisicos\n",
-                cores_fisicos);
-    if (cores_fisicos == cores_logicos) printf_color("El Hyper-Threading #{FG:lred}no" \
+    printf_color("Existe una cantidad de #{FG:lpurple}%02d#{FG:reset} Cores fisicos y #{FG:lpurple}%02d#{FG:reset}\n",
+                cores_fisicos, cores_logicos);
+    if (cores_fisicos == cores_logicos) {
+        printf_color("El Hyper-Threading #{FG:lred}no" \
             "#{FG:reset} se admite#{FG:reset} Cores fisicos\n",
                 cores_fisicos);
-    else printf_color("El Hyper-Threading #{FG:lgreen}si" \
+    }
+    else {
+        printf_color("El Hyper-Threading #{FG:lgreen}si" \
             "#{FG:reset} se admite#{FG:reset}\n",
                 cores_fisicos);
+    }
 }
 
 void analyze_topology() {
@@ -308,7 +352,7 @@ int main() {
 
     // Define la máscara de afinidad para el segundo núcleo (núcleo 1)
     // 2 en binario es 10, lo que representa el segundo núcleo
-    for (uint32_t processAffinityMask = 1; processAffinityMask < 0b1000000000000000000000000; processAffinityMask <<= 1, Core_actual++) {
+    for (uint32_t processAffinityMask = 1; processAffinityMask < 0b1000000000000; processAffinityMask <<= 1, Core_actual++) {
         // Establece la afinidad del proceso
         if (SetProcessAffinityMask(hProcess, processAffinityMask))
         {
@@ -367,10 +411,10 @@ int main() {
 
     }
 
-    for (uint8_t i = 0; i < 24; i++) {
+    for (uint8_t i = 0; i < 16; i++) {
         printf("%02hhu-", i, Locals_APICs[i]);
     }
-    for (uint8_t i = 0; i < 24; i++) {
+    for (uint8_t i = 0; i < 16; i++) {
         printf("\nCore %02hhu, Local APIC %02hhu\n", i, Locals_APICs[i]);
     }
     print_topology_summary();
