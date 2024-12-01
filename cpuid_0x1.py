@@ -39,7 +39,7 @@ class Processor_Info_and_Feature_Bits():
         uint32_t Reserved1          :4; // 31 - 28
     } Processor_Info_and_Feature_Bits;
     """
-    def __init__(self, eax:Optional[int] = None):
+    def __init__(self, eax:Optional[int] = None) -> None:
         """
             Obtiene la informacion de la cpu y la guarda en la clase.
             Esta informacion se obtiene desde la clase cpuid_x86.Cpuid

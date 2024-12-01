@@ -1,7 +1,7 @@
 #include <stdio.h>
 #include <stdint.h>
 #include "cpuid.h"
-#include "colors.h"
+#include "./colors-C-C-plus-plus/colors.h"
 /*
  * Obtener cuanta cache se comparte por core
  * 

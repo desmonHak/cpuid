@@ -7,3 +7,7 @@ bdist.win-amd64
 temp.win-amd64-cpython-311
 dist
 *.pyc
+*.exp
+*.obj
+*.o
+*.lib

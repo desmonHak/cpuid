@@ -4,6 +4,7 @@
 #undef _MSC_VER
 
 #include "cpuid.h"
+#ifndef M_RDTSC_ASM
 #ifdef _MSC_VER
 #define M_RDTSC_ASM(var1, var2) { \ // Código de ensamblador para MSVC(visual estudio)
     __asm rdtsc \
@@ -20,7 +21,7 @@
 #else
 #define printf(msg, ...) printf_color(msg , ##__VA_ARGS__)
 #endif
-
+#endif
 
 static inline uint64_t rdtsc() {
     /*
@@ -62,7 +63,7 @@ static inline uint64_t rdtsc() {
      * Por tanto, se puede usar dicha instruccion para averiguar la frecuencia base de la CPU(no siempre seguro, mas no la del momento actual
      * 
      */
-    unsigned int lo, hi;
+    uint32_t lo, hi;
     /*__asm__ volatile (
         "rdtsc"
         : "=a" (lo), "=d" (hi)

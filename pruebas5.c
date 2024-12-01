@@ -3,7 +3,7 @@
 #include <stdlib.h>
 #include <windows.h>
 #include "cpuid.h"
-#include "colors.h"
+#include "./colors-C-C-plus-plus/colors.h"
 
 #define change_null_space(val) ((val >= 32) && (val <= 126))  ? val : ' '
 
