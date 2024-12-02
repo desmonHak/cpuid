@@ -29,7 +29,7 @@ pruebas5.$(EXTENSION): pruebas5.c
 	$(CC) $(CFLAGS1) $^ -o $@
 
 cpuid.o: cpuid.c
-	$(CC) $(CFLAGS2)  $^ -c -o $@
+	$(CC) $(CFLAGS2) -D_MSC_VER  $^ -c -o $@
 
 build_python:
 	python setup.py install

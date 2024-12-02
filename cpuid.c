@@ -1,7 +1,9 @@
 #ifndef __CPUID_C__
 #define __CPUID_C__
 
+#if defined(__GNUC_PATCHLEVEL__) || defined(__GNUC_MINOR__) || defined(__GNUC_PATCHLEVEL__)
 #undef _MSC_VER
+#endif
 
 #include "cpuid.h"
 #ifndef M_RDTSC_ASM
@@ -91,57 +93,57 @@ void wait(int seconds) {
  * 
  */
 #ifdef _MSC_VER
-#if defined(__x86_64__) || defined(_WIN64) || defined(_M_X64) || defined(_M_AMD64)
-uint64_t get_flags() {
-    unsigned __int64 flags;
-    __asm {
-        pushfq
-        pop flags
-    }
+    #if defined(__x86_64__) || defined(_WIN64) || defined(_M_X64) || defined(_M_AMD64)
+        uint64_t get_flags() {
+            unsigned __int64 flags;
+            __asm {
+                pushfq
+                pop flags
+            }
 
-    return flags;
-}
+            return flags;
+        }
+    #else
+    uint32_t get_flags() {
+            unsigned long flags;
+            __asm {
+                pushfd
+                pop flags
+            }
+
+            return flags;
+        }
+    #endif
 #else
-uint32_t get_flags() {
-    unsigned long flags;
-    __asm {
-        pushfd
-        pop flags
-    }
+    #if defined(__x86_64__) || defined(_WIN64) || defined(_M_X64) || defined(_M_AMD64)
+        uint64_t get_flags() {
+            uint64_t flags;
 
-    return flags;
-}
-#endif
-#else
-#if defined(__x86_64__) || defined(_WIN64) || defined(_M_X64) || defined(_M_AMD64)
-uint64_t get_flags() {
-    uint64_t flags;
+            __asm__ volatile (
+                "pushfq\n\t"         // Guarda el valor actual de RFLAGS en la pila
+                "popq %0\n\t"        // Recupera el valor de RFLAGS en la variable 'flags'
+                : "=rm" (flags)      // Usamos "rm" en lugar de "r" para permitir que flags se almacene en memoria
+                :
+                : "cc"
+            );
 
-    __asm__ volatile (
-        "pushfq\n\t"         // Guarda el valor actual de RFLAGS en la pila
-        "popq %0\n\t"        // Recupera el valor de RFLAGS en la variable 'flags'
-        : "=rm" (flags)      // Usamos "rm" en lugar de "r" para permitir que flags se almacene en memoria
-        :
-        : "cc"
-    );
+            return flags;
+        }
+    #else
+        uint32_t get_flags() {
+            uint32_t flags;
 
-    return flags;
-}
-#else
-uint32_t get_flags() {
-    uint32_t flags;
+            __asm__ volatile (
+                "pushfl\n\t"         // Guarda el valor actual de EFLAGS en la pila
+                "popl %0\n\t"        // Recupera el valor de EFLAGS en la variable 'flags'
+                : "=rm" (flags)      // Usamos "rm" en lugar de "r" para permitir que flags se almacene en memoria
+                :
+                : "cc"
+            );
 
-    __asm__ volatile (
-        "pushfl\n\t"         // Guarda el valor actual de EFLAGS en la pila
-        "popl %0\n\t"        // Recupera el valor de EFLAGS en la variable 'flags'
-        : "=rm" (flags)      // Usamos "rm" en lugar de "r" para permitir que flags se almacene en memoria
-        :
-        : "cc"
-    );
-
-    return flags;
-}
-#endif
+            return flags;
+        }
+    #endif
 #endif
 
 
@@ -155,67 +157,67 @@ int is_cpuid_supported() {
      * el modo usuario. 
      * 
      */
-#ifdef _MSC_VER
-#if defined(__x86_64__) || defined(_WIN64) || defined(_M_X64) || defined(_M_AMD64)
-    uint64_t flags1, flags2;
-    __asm {
-        pushfq
-        pop flags1
-        mov flags2, flags1
-        or flags1, 0x200000
-        push flags1
-        popfq
-        pushfq
-        pop flags2
-    }
-#else
-    uint32_t flags1, flags2;
-        __asm {
-            pushfd
-            pop flags1
-            mov flags2, flags1
-            or flags1, 0x200000
-            push flags1
-            popfd
-            pushfd
-            pop flags2
-        }
-#endif
-#else
-#if defined(__x86_64__) || defined(_WIN64) || defined(_M_X64) || defined(_M_AMD64)
-    uint64_t flags1, flags2;
+    #ifdef _MSC_VER
+        #if defined(__x86_64__) || defined(_WIN64) || defined(_M_X64) || defined(_M_AMD64)
+            uint64_t flags1, flags2;
+            __asm {
+                pushfq
+                pop flags1
+                mov flags2, flags1
+                or flags1, 0x200000
+                push flags1
+                popfq
+                pushfq
+                pop flags2
+            }
+        #else
+            uint32_t flags1, flags2;
+                __asm {
+                    pushfd
+                    pop flags1
+                    mov flags2, flags1
+                    or flags1, 0x200000
+                    push flags1
+                    popfd
+                    pushfd
+                    pop flags2
+                }
+        #endif
+    #else
+        #if defined(__x86_64__) || defined(_WIN64) || defined(_M_X64) || defined(_M_AMD64)
+            uint64_t flags1, flags2;
 
-    __asm__ volatile (
-        "pushfq\n\t"             // Guarda el valor actual de RFLAGS en la pila
-        "popq %0\n\t"            // Recupera el valor de RFLAGS en la variable 'rflags1'
-        "movq %0, %1\n\t"        // Copia rflags1 en rflags2
-        "orq $0x200000, %0\n\t" // Alterna el bit 21 de rflags1
-        "pushq %0\n\t"           // Guarda el valor modificado en la pila
-        "popfq\n\t"              // Restaura el valor modificado en RFLAGS
-        "pushfq\n\t"             // Guarda el valor actual de RFLAGS en la pila
-        "popq %1\n\t"            // Recupera el valor actual en rflags2
-        : "=r" (flags1), "=r" (flags2) // Cambio de "=r" (flags1), "=r" (flags2) a "=r" (flags1), "=rm" (flags2)
-        :
-        : "cc"
-    );
-#else
-    uint32_t flags1, flags2;
+            __asm__ volatile (
+                "pushfq\n\t"             // Guarda el valor actual de RFLAGS en la pila
+                "popq %0\n\t"            // Recupera el valor de RFLAGS en la variable 'rflags1'
+                "movq %0, %1\n\t"        // Copia rflags1 en rflags2
+                "orq $0x200000, %0\n\t" // Alterna el bit 21 de rflags1
+                "pushq %0\n\t"           // Guarda el valor modificado en la pila
+                "popfq\n\t"              // Restaura el valor modificado en RFLAGS
+                "pushfq\n\t"             // Guarda el valor actual de RFLAGS en la pila
+                "popq %1\n\t"            // Recupera el valor actual en rflags2
+                : "=r" (flags1), "=r" (flags2) // Cambio de "=r" (flags1), "=r" (flags2) a "=r" (flags1), "=rm" (flags2)
+                :
+                : "cc"
+            );
+        #else
+            uint32_t flags1, flags2;
 
-    __asm__ volatile (
-        "pushfl\n\t"             // Guarda el valor actual de EFLAGS en la pila
-        "popl %0\n\t"            // Recupera el valor de EFLAGS en la variable 'eflags1'
-        "movl %0, %1\n\t"        // Copia eflags1 en eflags2
-        "orl $0x200000, %0\n\t" // Alterna el bit 21 de eflags1
-        "pushl %0\n\t"           // Guarda el valor modificado en la pila
-        "popfl\n\t"              // Restaura el valor modificado en EFLAGS
-        "pushfl\n\t"             // Guarda el valor actual de EFLAGS en la pila
-        "popl %1\n\t"            // Recupera el valor actual en eflags2
-        : "=r" (flags1), "=r" (flags2) // Cambio de "=r" (flags1), "=r" (flags2) a "=r" (flags1), "=rm" (flags2)
-        :
-        : "cc"
-    );
-#endif
-#endif
+            __asm__ volatile (
+                "pushfl\n\t"             // Guarda el valor actual de EFLAGS en la pila
+                "popl %0\n\t"            // Recupera el valor de EFLAGS en la variable 'eflags1'
+                "movl %0, %1\n\t"        // Copia eflags1 en eflags2
+                "orl $0x200000, %0\n\t" // Alterna el bit 21 de eflags1
+                "pushl %0\n\t"           // Guarda el valor modificado en la pila
+                "popfl\n\t"              // Restaura el valor modificado en EFLAGS
+                "pushfl\n\t"             // Guarda el valor actual de EFLAGS en la pila
+                "popl %1\n\t"            // Recupera el valor actual en eflags2
+                : "=r" (flags1), "=r" (flags2) // Cambio de "=r" (flags1), "=r" (flags2) a "=r" (flags1), "=rm" (flags2)
+                :
+                : "cc"
+            );
+        #endif
+    #endif
     return (flags1 >> 21); 
 }
 
@@ -242,18 +244,18 @@ void printBits(size_t const size, void const * const ptr)
 
 void call_cpuid(uint32_t eax_in, uint32_t ecx_in, uint32_t *a, uint32_t *b, uint32_t *c, uint32_t *d) {
     #ifdef _MSC_VER
-    uint32_t cpu_info[4];
-    __cpuidex(cpu_info, eax_in, ecx_in);
-    *a = cpu_info[0];
-    *b = cpu_info[1];
-    *c = cpu_info[2];
-    *d = cpu_info[3];
+        uint32_t cpu_info[4];
+        __cpuidex(cpu_info, eax_in, ecx_in);
+        *a = cpu_info[0];
+        *b = cpu_info[1];
+        *c = cpu_info[2];
+        *d = cpu_info[3];
     #else
-    __asm__ volatile (
-        "cpuid"
-        : "=a" (*a), "=b" (*b), "=c" (*c), "=d" (*d)
-        : "a" (eax_in), "c" (ecx_in)
-    );
+        __asm__ volatile (
+            "cpuid"
+            : "=a" (*a), "=b" (*b), "=c" (*c), "=d" (*d)
+            : "a" (eax_in), "c" (ecx_in)
+        );
     #endif
 }
 
